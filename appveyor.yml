@@ -4,6 +4,7 @@ environment:
   nodejs_version: "8.9.0"
 
 install:
+  - node -v
   - git submodule update --init --recursive
   - yarn install
   - yarn install-node-obs
