@@ -1,7 +1,7 @@
 build: off
 
 environment:
-  nodejs_version: "8.7.0"
+  nodejs_version: "Stable"
 
 install:
   - node -v
