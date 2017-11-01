@@ -1,9 +1,10 @@
 build: off
 
 environment:
-  nodejs_version: "Stable"
+  nodejs_version: "8.9.0"
 
 install:
+  - ps: Install-Product node 8.9.0
   - node -v
   - git submodule update --init --recursive
   - yarn install
