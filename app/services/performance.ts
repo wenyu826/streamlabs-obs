@@ -30,9 +30,9 @@ export class PerformanceService extends StatefulService<IPerformanceState> {
   }
 
   init() {
-    setInterval(() => {
-      this.SET_PERFORMANCE_STATS(nodeObs.OBS_API_getPerformanceStatistics());
-    }, 2 * 1000);
+    // setInterval(() => {
+    //   this.SET_PERFORMANCE_STATS(nodeObs.OBS_API_getPerformanceStatistics());
+    // }, 2 * 1000);
   }
 
 }

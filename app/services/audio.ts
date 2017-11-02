@@ -95,26 +95,26 @@ export class AudioService extends StatefulService<IAudioSourcesState> implements
 
   protected init() {
 
-    this.sourcesService.sourceAdded.subscribe(sourceModel => {
-      const source = this.sourcesService.getSource(sourceModel.sourceId);
-      if (!source.audio) return;
-      this.createAudioSource(source);
-    });
+    // this.sourcesService.sourceAdded.subscribe(sourceModel => {
+    //   const source = this.sourcesService.getSource(sourceModel.sourceId);
+    //   if (!source.audio) return;
+    //   this.createAudioSource(source);
+    // });
 
-    this.sourcesService.sourceUpdated.subscribe(source => {
-      const audioSource = this.getSource(source.sourceId);
-      if (!audioSource) return;
+    // this.sourcesService.sourceUpdated.subscribe(source => {
+    //   const audioSource = this.getSource(source.sourceId);
+    //   if (!audioSource) return;
 
-      if (!source.audio) {
-        this.removeAudioSource(source.sourceId);
-        return;
-      }
+    //   if (!source.audio) {
+    //     this.removeAudioSource(source.sourceId);
+    //     return;
+    //   }
 
-    });
+    // });
 
-    this.sourcesService.sourceRemoved.subscribe(source => {
-      if (source.audio) this.removeAudioSource(source.sourceId);
-    });
+    // this.sourcesService.sourceRemoved.subscribe(source => {
+    //   if (source.audio) this.removeAudioSource(source.sourceId);
+    // });
 
   }
 

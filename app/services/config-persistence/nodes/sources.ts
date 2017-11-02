@@ -142,12 +142,12 @@ export class SourcesNode extends Node<ISchema, {}> {
         }
       );
       if (source.audioMixers) {
-        this.audioService.getSource(sourceInfo.id).setMul(sourceInfo.volume);
-        this.audioService.getSource(sourceInfo.id).setSettings({
-          forceMono: sourceInfo.forceMono,
-          audioMixers: sourceInfo.audioMixers,
-          monitoringType: sourceInfo.monitoringType
-        });
+        // this.audioService.getSource(sourceInfo.id).setMul(sourceInfo.volume);
+        // this.audioService.getSource(sourceInfo.id).setSettings({
+        //   forceMono: sourceInfo.forceMono,
+        //   audioMixers: sourceInfo.audioMixers,
+        //   monitoringType: sourceInfo.monitoringType
+        // });
       }
 
       if (sourceInfo.hotkeys) {
