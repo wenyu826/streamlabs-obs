@@ -24,13 +24,7 @@ const { remote } = electron;
 @Component({
   mixins: [windowMixin],
   components: {
-    TitleBar,
-    TopNav,
     Studio,
-    Dashboard,
-    Live,
-    Onboarding,
-    LiveDock,
     StudioFooter
   }
 })

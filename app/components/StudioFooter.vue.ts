@@ -10,9 +10,7 @@ import { NavigationService } from "../services/navigation";
 
 @Component({
   components: {
-    StartStreamingButton,
-    TestWidgets,
-    PerformanceMetrics
+    StartStreamingButton
   }
 })
 export default class StudioFooterComponent extends Vue {

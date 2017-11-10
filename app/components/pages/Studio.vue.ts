@@ -5,8 +5,7 @@ import StudioControls from '../StudioControls.vue';
 
 @Component({
   components: {
-    StudioEditor,
-    StudioControls
+    StudioEditor
   }
 })
 export default class Studio extends Vue {

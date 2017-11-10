@@ -21,12 +21,13 @@ export default class StartStreamingButton extends Vue {
       if (this.userService.isLoggedIn()
         && this.customizationService.state.updateStreamInfoOnLive
         && this.userService.platform.type === 'twitch') {
-        this.streamingService.showEditStreamInfo();
+        // this.streamingService.showEditStreamInfo();
+        this.streamingService.startStreaming();
       } else {
         this.streamingService.startStreaming();
-        if (this.userService.isLoggedIn()) {
-          this.navigationService.navigate('Live');
-        }
+        // if (this.userService.isLoggedIn()) {
+        //   this.navigationService.navigate('Live');
+        // }
       }
     }
   }
