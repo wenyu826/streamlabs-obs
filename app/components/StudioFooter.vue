@@ -18,6 +18,8 @@
       <start-streaming-button />
     </div>
   </div>
+
+  <notification />
 </div>
 </template>
 

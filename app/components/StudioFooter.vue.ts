@@ -7,12 +7,14 @@ import TestWidgets from './TestWidgets.vue';
 import PerformanceMetrics from './PerformanceMetrics.vue';
 import { UserService } from '../services/user';
 import { NavigationService } from "../services/navigation";
+import Notification from './Notification.vue';
 
 @Component({
   components: {
     StartStreamingButton,
     TestWidgets,
-    PerformanceMetrics
+    PerformanceMetrics,
+    Notification
   }
 })
 export default class StudioFooterComponent extends Vue {
