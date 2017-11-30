@@ -15,13 +15,15 @@ import { StreamingService } from '../../services/streaming';
 import { WindowsService } from '../../services/windows';
 import { NavigationService } from '../../services/navigation';
 import { CustomizationService } from '../../services/customization';
+import { Multiselect } from 'vue-multiselect';
 
 @Component({
   components: {
     ModalLayout,
     TextInput,
     ListInput,
-    BoolInput
+    BoolInput,
+    Multiselect
   },
   mixins: [windowMixin]
 })

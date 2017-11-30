@@ -25,6 +25,51 @@
         :loading="searchingGames"
         @search-change="debouncedGameSearch"
         @input="onGameInput"/>
+      <div class="input-container">
+        <div class="input-label">
+        </div>
+        <div class="input-wrapper">
+          <div class="checkbox">
+            <input
+              type="checkbox"
+              :checked="true"
+            />
+            <label><span>Use optimized encoder settings for this game</span></label>
+          </div>
+        </div>
+      </div>
+      <div class="input-container select">
+        <div class="input-label">
+          <label>Profile</label>
+        </div>
+        <div class="input-wrapper">
+          <multiselect
+            value="cpu"
+            :options="[
+              {
+                value: 'cpu',
+                description: 'CPU Optimized'
+              },
+              {
+                value: 'video',
+                description: 'Video Quality Optimized'
+              },
+              {
+                value: 'balanced',
+                description: 'Balanced'
+              }
+            ]"
+            track-by="value"
+            :close-on-select="true"
+            label="description">
+            <template slot="option" scope="props">
+              <span>
+                {{ props.option.description }}
+              </span>
+            </template>
+          </multiselect>
+        </div>
+      </div>
       <BoolInput v-model="doNotShowAgainModel" v-if="!midStreamMode"/>
       <div class="warning" v-if="updateError">
         <div v-if="midStreamMode">
