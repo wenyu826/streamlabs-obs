@@ -1,10 +1,11 @@
-import { ScenesService, Scene, ISceneApi, ISceneItem, ISceneItemApi, ISceneItemInfo } from './index';
+import { ScenesService, Scene, ISceneApi, ISceneItem, ISceneItemApi, ISceneItemInfo, ITransform } from './index';
 import { mutation, ServiceHelper } from '../stateful-service';
 import Utils from '../utils';
 import { Source, SourcesService, TSourceType, ISource } from '../sources';
 import { Inject } from '../../util/injector';
 import { TFormData } from '../../components/shared/forms/Input';
 import * as obs from '../obs-api';
+import { updateLocale } from 'moment';
 
 
 /**
@@ -100,74 +101,125 @@ export class SceneItem implements ISceneItemApi {
     this.scenesService.getScene(this.sceneId).removeItem(this.sceneItemId);
   }
 
-  setPosition(vec: IVec2) {
-    this.getObsSceneItem().position = { x: vec.x, y: vec.y };
-    this.update({ sceneItemId: this.sceneItemId, x: vec.x, y: vec.y });
-  }
-
-
-  nudgeLeft() {
-    this.setPosition({ x: this.x - 1, y: this.y });
-  }
-
-
-  nudgeRight() {
-    this.setPosition({ x: this.x + 1, y: this.y });
-  }
-
-
-  nudgeUp() {
-    this.setPosition({ x: this.x, y: this.y - 1 });
-  }
-
-
-  nudgeDown() {
-    this.setPosition({ x: this.x, y: this.y + 1 });
-  }
-
-
   setVisibility(visible: boolean) {
     this.getObsSceneItem().visible = visible;
     this.update({ sceneItemId: this.sceneItemId, visible });
   }
 
+  /**
+   * @deprecated Use setTransform instead
+   */
+  setPosition(vec: IVec2) {
+    this.setTransform({ position: vec });
+  }
 
+  nudgeLeft() {
+    this.setTransform({ position: { x: this.x - 1, y: this.y } });
+  }
+
+  nudgeRight() {
+    this.setTransform({ position: { x: this.x + 1, y: this.y } });
+  }
+
+  nudgeUp() {
+    this.setTransform({ position: { x: this.x, y: this.y - 1 } });
+  }
+
+  nudgeDown() {
+    this.setTransform({ position: { x: this.x, y: this.y + 1 } });
+  }
+
+  /**
+   * @deprecated Use setTransform instead
+   */
   setRotation(rotation: number) {
-    // Adjusts any positve or negative rotation value into a normalized
-    // value between 0 and 360.
-    const effectiveRotation = ((rotation % 360) + 360) % 360;
-
-    this.getObsSceneItem().rotation = effectiveRotation;
-    this.update({ sceneItemId: this.sceneItemId, rotation: effectiveRotation });
+    this.setTransform({ rotation });
   }
 
+  /**
+   * @deprecated Use setTransform instead
+   */
+  setCrop(crop: ICrop) {
+    this.setTransform({ crop });
+  }
 
+  /**
+   * @deprecated Use setTransform instead
+   */
   setPositionAndScale(x: number, y: number, scaleX: number, scaleY: number) {
-    const obsSceneItem = this.getObsSceneItem();
-    obsSceneItem.position = { x, y };
-    obsSceneItem.scale = { x: scaleX, y: scaleY };
-    this.update({ sceneItemId: this.sceneItemId, x, y, scaleX, scaleY });
+    this.setTransform({ position: { x, y }, scale: { x: scaleX, y: scaleY } });
   }
 
-
-  setCrop(crop: ICrop): ICrop {
-    const cropModel: ICrop = {
-      top: Math.round(crop.top),
-      right: Math.round(crop.right),
-      bottom: Math.round(crop.bottom),
-      left: Math.round(crop.left)
-    };
-    this.getObsSceneItem().crop = cropModel;
-    this.update({ sceneItemId: this.sceneItemId, crop: { ...crop } });
-    return cropModel;
-  }
-
-
+  /**
+   * @deprecated Use setTransform instead
+   */
   setPositionAndCrop(x: number, y: number, crop: ICrop) {
+    this.setTransform({ position: { x, y }, crop });
+  }
+
+  /**
+   * Takes a partial transform and applies it to this scene
+   * item.  Any unset attributes on the transform object
+   * will not be changed.
+   * @param transform a partial transform
+   */
+  setTransform(transform: Partial<ITransform>) {
     const obsSceneItem = this.getObsSceneItem();
-    this.setCrop(crop);
-    obsSceneItem.position = { x, y };
-    this.update({ sceneItemId: this.sceneItemId, x, y });
+    const updatePatch: Partial<ISceneItem> = {};
+
+    if (transform.position) {
+      obsSceneItem.position = transform.position;
+      updatePatch.x = transform.position.x;
+      updatePatch.y = transform.position.y;
+    }
+
+    if (transform.scale) {
+      obsSceneItem.scale = transform.scale;
+      updatePatch.scaleX = transform.scale.x;
+      updatePatch.scaleY = transform.scale.y;
+    }
+
+    if (transform.crop) {
+      const roundedCrop = {
+        top: Math.round(transform.crop.top),
+        right: Math.round(transform.crop.right),
+        bottom: Math.round(transform.crop.bottom),
+        left: Math.round(transform.crop.left)
+      };
+
+      obsSceneItem.crop = roundedCrop;
+      updatePatch.crop = roundedCrop;
+    }
+
+    if (transform.rotation) {
+      // Adjusts any positve or negative rotation value into a normalized
+      // value between 0 and 360.
+      const effectiveRotation = ((transform.rotation % 360) + 360) % 360;
+
+      obsSceneItem.rotation = effectiveRotation;
+      updatePatch.rotation = effectiveRotation;
+    }
+
+    this.update({ sceneItemId: this.sceneItemId, ...updatePatch });
+  }
+
+  /**
+   * Returns the transform of this scene item
+   */
+  getTransform(): ITransform {
+    // TODO: Store the transform on the scene-item as-is
+    return {
+      position: {
+        x: this.x,
+        y: this.y
+      },
+      scale: {
+        x: this.scaleX,
+        y: this.scaleY
+      },
+      crop: this.crop,
+      rotation: this.rotation
+    };
   }
 
 

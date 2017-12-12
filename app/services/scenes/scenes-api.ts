@@ -94,14 +94,23 @@ export interface ISceneItem {
 }
 
 
+export interface ITransform {
+  position: IVec2;
+  scale: IVec2;
+  crop: ICrop;
+  rotation: number;
+}
+
+
 export interface ISceneItemApi extends ISceneItem {
   getScene(): ISceneApi;
   getSource(): ISourceApi;
   setPosition(vec: IVec2): void;
   setVisibility(visible: boolean): void;
   setPositionAndScale(x: number, y: number, scaleX: number, scaleY: number): void;
-  setCrop(crop: ICrop): ICrop;
+  setCrop(crop: ICrop): void;
   setPositionAndCrop(x: number, y: number, crop: ICrop): void;
+  setTransform(transform: Partial<ITransform>): void;
   setLocked(locked: boolean): void;
   getModel(): ISceneItem & ISource;
   remove(): void;
