@@ -1,6 +1,6 @@
 import Vue from 'vue';
 import { Component, Prop } from 'vue-property-decorator';
-import { StreamingService } from '../services/streaming';
+import { RtmpOutputService } from '../services/rtmp-output';
 import { Inject } from '../util/injector';
 import { NavigationService } from '../services/navigation';
 import { UserService } from '../services/user';
@@ -8,7 +8,7 @@ import { CustomizationService } from '../services/customization';
 
 @Component({})
 export default class StartStreamingButton extends Vue {
-  @Inject() streamingService: StreamingService;
+  @Inject() rtmpOutputService: RtmpOutputService;
   @Inject() userService: UserService;
   @Inject() customizationService: CustomizationService;
   @Inject() navigationService: NavigationService;
@@ -16,26 +16,16 @@ export default class StartStreamingButton extends Vue {
   @Prop() disabled: boolean;
 
   toggleStreaming() {
-    if (this.streamingService.isStreaming) {
-      this.streamingService.stopStreaming();
-    } else {
-      if (
-        this.userService.isLoggedIn() &&
-        this.customizationService.state.updateStreamInfoOnLive &&
-        this.userService.platform.type === 'twitch'
-      ) {
-        this.streamingService.showEditStreamInfo();
-      } else {
-        this.streamingService.startStreaming();
-        if (this.userService.isLoggedIn()) {
-          this.navigationService.navigate('Live');
-        }
+      if (this.rtmpOutputService.isActive()) {
+        this.rtmpOutputService.stop();
+        return;
       }
-    }
+
+      this.rtmpOutputService.start();
   }
 
   get streamButtonLabel() {
-    if (this.streamingService.isStreaming) {
+    if (this.rtmpOutputService.isActive()) {
       return 'End Stream';
     }
 

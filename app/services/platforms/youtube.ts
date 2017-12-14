@@ -35,23 +35,6 @@ export class YoutubeService extends Service implements IPlatformService {
 
 
   setupStreamSettings(auth: IPlatformAuth) {
-    this.fetchStreamKey().then(streamKey => {
-      const settings = this.settingsService.getSettingsFormData('Stream');
-
-      settings.forEach(subCategory => {
-        subCategory.parameters.forEach(parameter => {
-          if (parameter.name === 'service') {
-            parameter.value = 'YouTube / YouTube Gaming';
-          }
-
-          if (parameter.name === 'key') {
-            parameter.value = streamKey;
-          }
-        });
-      });
-
-      this.settingsService.setSettings('Stream', settings);
-    });
   }
 
   fetchBoundStreamId(): Promise<string> {

@@ -35,7 +35,7 @@ export default class SceneTransitions extends Vue {
   windowsService: WindowsService;
 
   categoryName = 'General';
-  settingsData = this.settingsService.getSettingsFormData(this.categoryName);
+  settingsData = {}; /* this.settingsService.getSettingsFormData(this.categoryName); */
   icons: Dictionary<string> = {
     General: 'th-large',
     Stream: 'globe',
@@ -48,13 +48,13 @@ export default class SceneTransitions extends Vue {
     Overlays: 'picture-o'
   };
 
-  get categoryNames() {
-    return this.settingsService.getCategories();
-  }
+  // get categoryNames() {
+  //   return this.settingsService.getCategories();
+  // }
 
   save(settingsData: ISettingsSubCategory[]) {
-    this.settingsService.setSettings(this.categoryName, settingsData);
-    this.settingsData = this.settingsService.getSettingsFormData(this.categoryName);
+    // this.settingsService.setSettings(this.categoryName, settingsData);
+    // this.settingsData = this.settingsService.getSettingsFormData(this.categoryName);
   }
 
   done() {
@@ -63,7 +63,7 @@ export default class SceneTransitions extends Vue {
 
   @Watch('categoryName')
   onCategoryNameChangedHandler(categoryName: string) {
-    this.settingsData = this.settingsService.getSettingsFormData(categoryName);
+    //this.settingsData = this.settingsService.getSettingsFormData(categoryName);
   }
 
 }

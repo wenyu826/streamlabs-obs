@@ -45,7 +45,6 @@ export class ScenesService extends StatefulService<IScenesState> implements ISce
   @Inject()
   private sourcesService: SourcesService;
 
-
   @Inject('ScenesTransitionsService')
   private transitionsService: ScenesTransitionsService;
 

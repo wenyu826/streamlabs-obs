@@ -42,9 +42,6 @@ export interface ISettingsState {
 declare type TSettingsFormData = Dictionary<ISettingsSubCategory[]>;
 
 export interface ISettingsServiceApi {
-  getCategories(): string[];
-  getSettingsFormData(categoryName: string): ISettingsSubCategory[];
-  setSettings(categoryName: string, settingsData: ISettingsSubCategory[]): void;
 }
 
 export class SettingsService extends StatefulService<ISettingsState> implements ISettingsServiceApi {
@@ -84,12 +81,8 @@ export class SettingsService extends StatefulService<ISettingsState> implements 
   loadSettingsIntoStore() {
     // load configuration from nodeObs to state
     const settingsFormData = {};
-    this.getCategories().forEach(categoryName => {
-      settingsFormData[categoryName] = this.getSettingsFormData(categoryName);
-    });
     this.SET_SETTINGS(SettingsService.convertFormDataToState(settingsFormData));
   }
-
 
   showSettings() {
     this.windowsService.showWindow({
@@ -104,18 +97,6 @@ export class SettingsService extends StatefulService<ISettingsState> implements 
   advancedSettingEnabled(): boolean {
     return Utils.isDevMode() || this.appService.state.argv.includes('--adv-settings');
   }
-
-
-  getCategories(): string[] {
-    let categories = nodeObs.OBS_settings_getListCategories();
-    categories = categories.concat('Overlays');
-
-    // we decided to not expose API settings for production version yet
-    if (this.advancedSettingEnabled()) categories = categories.concat(['API']);
-
-    return categories;
-  }
-
 
   getSettingsFormData(categoryName: string): ISettingsSubCategory[] {
     if (categoryName === 'Audio') return this.getAudioSettingsFormData();

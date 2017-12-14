@@ -1,7 +1,6 @@
 <template>
 <button
   class="button button--go-live button--action"
-  :class="{ 'button--soft-warning': streamingService.isStreaming }"
   :disabled="disabled"
   @click="toggleStreaming">{{streamButtonLabel}}</button>
 </template>
