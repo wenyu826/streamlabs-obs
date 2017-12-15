@@ -161,9 +161,68 @@ export class ScenesService extends StatefulService<IScenesState> implements ISce
     const scene = this.getScene(id);
     if (!scene) return false;
 
+    const prevSceneItems = this.activeScene.getItems();
     const obsScene = scene.getObsScene();
 
+    const nextSceneItems = this.getScene(id).getItems();
+
+    const transitionList: any[] = [];
+    nextSceneItems.forEach(sceneItem => {
+      const sourceItem = prevSceneItems.find(item => item.name === sceneItem.name);
+      if (!sourceItem) return;
+      const sourceItemTransform = {
+        x: sourceItem.x,
+        y: sourceItem.y,
+        scaleX: sourceItem.scaleX,
+        scaleY: sourceItem.scaleY
+      };
+      const destItemTransform = {
+        x: sceneItem.x,
+        y: sceneItem.y,
+        scaleX: sceneItem.scaleX,
+        scaleY: sceneItem.scaleY
+      };
+      transitionList.push([
+        sourceItem,
+        sourceItemTransform,
+        sceneItem,
+        destItemTransform
+      ]);
+    });
+
+    const animTime = 300;
+    const updateRate = 25;
+
+    const animTick = (k: number) => {
+      transitionList.forEach(items => {
+        const [source, sourceItemTransform, dest, destItemTransform] = items;
+        const props = { x: 0, y: 0, scaleX: 0, scaleY: 0 };
+        Object.keys(props).forEach(propName => {
+          props[propName] = sourceItemTransform[propName] +
+            (destItemTransform[propName] - sourceItemTransform[propName]) * k;
+        });
+        dest.setPositionAndScale(
+          props.x,
+          props.y,
+          props.scaleX,
+          props.scaleY
+        );
+      });
+    };
+
+    let timeLeft = animTime;
+    const animLoop = () => {
+      timeLeft -= updateRate;
+      if (timeLeft < 0) timeLeft = 0;
+      animTick(1 - timeLeft / animTime);
+      if (timeLeft) setTimeout(animLoop, updateRate);
+    };
+
+    animTick(0);
+    setTimeout(animLoop, updateRate);
     this.transitionsService.transitionTo(obsScene);
+
+
     this.MAKE_SCENE_ACTIVE(id);
     this.sceneSwitched.next(scene.getModel());
     return true;
