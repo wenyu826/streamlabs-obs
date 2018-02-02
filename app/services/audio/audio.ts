@@ -29,7 +29,7 @@ export enum E_AUDIO_CHANNELS {
   INPUT_3 = 5,
 }
 
-const VOLMETER_UPDATE_INTERVAL = 50;
+const VOLMETER_UPDATE_INTERVAL = 1000;
 
 interface IAudioSourceData {
   fader?: obs.IFader;
@@ -206,13 +206,8 @@ export class AudioService extends StatefulService<IAudioSourcesState> implements
     let volmeterCheckTimeoutId: number;
     this.sourceData[sourceId].volmeter.updateInterval = VOLMETER_UPDATE_INTERVAL;
     this.sourceData[sourceId].callbackInfo = this.sourceData[sourceId].volmeter.addCallback(
-      (level: number, magnitude: number, peak: number, muted: boolean) => {
-        const volmeter: IVolmeter = { level, magnitude, peak, muted };
-
-        if (muted) {
-          volmeter.level = 0;
-          volmeter.peak = 0;
-        }
+      (magnitude: number[], peak: number[], inputPeak: number[]) => {
+        const volmeter: IVolmeter = { magnitude, peak, inputPeak };
 
         volmeterStream.next(volmeter);
         lastVolmeterValue = volmeter;
@@ -222,7 +217,7 @@ export class AudioService extends StatefulService<IAudioSourcesState> implements
 
     function volmeterCheck() {
       if (!gotEvent) {
-        volmeterStream.next({ ...lastVolmeterValue, level: 0, peak: 0 });
+        volmeterStream.next({ ...lastVolmeterValue, magnitude: [0], peak: [0], inputPeak: [0] });
       }
 
       gotEvent = false;

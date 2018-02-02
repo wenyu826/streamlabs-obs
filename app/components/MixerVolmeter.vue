@@ -30,7 +30,7 @@
   .volmeter-peak {
     .absolute(0, auto, 0, 0);
     width: 2px;
-    background-color: @input-border-color;
+    background-color: #000000;
   }
 }
 

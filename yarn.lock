@@ -5301,9 +5301,9 @@ object.omit@^2.0.0:
     for-own "^0.1.4"
     is-extendable "^0.1.1"
 
-"obs-studio-node@https://ci.appveyor.com/api/buildjobs/311no3binb5o6wi6/artifacts/streamlabs-x86_64.tar.gz":
+"obs-studio-node@https://ci.appveyor.com/api/buildjobs/c6savw5ampyg38e1/artifacts/streamlabs-x86_64-unsigned.tar.gz":
   version "0.0.1"
-  resolved "https://ci.appveyor.com/api/buildjobs/311no3binb5o6wi6/artifacts/streamlabs-x86_64.tar.gz#206413fa038c5d25eaf8781bac8495eb65a9bc79"
+  resolved "https://ci.appveyor.com/api/buildjobs/c6savw5ampyg38e1/artifacts/streamlabs-x86_64-unsigned.tar.gz#f180dee32aff9ecb4a464befa0ec603dc87bba8f"
   dependencies:
     nan "^2.8.0"
 
