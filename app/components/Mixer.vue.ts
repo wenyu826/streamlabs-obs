@@ -12,6 +12,8 @@ export default class Mixer extends Vue {
   @Inject()
   audioService: AudioService;
 
+  useGLVolmeter = true;
+
   showAdvancedSettings() {
     this.audioService.showAdvancedSettings();
   }

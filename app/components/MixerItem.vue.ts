@@ -5,13 +5,15 @@ import { AudioSource } from '../services/audio';
 import { CustomizationService } from 'services/customization';
 import Slider from './shared/Slider.vue';
 import MixerVolmeter from './MixerVolmeter.vue';
+import MixerVolmeterGL from './MixerVolmeterGL.vue';
 import { Inject } from '../util/injector';
 
 @Component({
-  components: { Slider, MixerVolmeter }
+  components: { Slider, MixerVolmeter, MixerVolmeterGL }
 })
 export default class MixerItem extends Vue {
   @Prop() audioSource: AudioSource;
+  @Prop() useGLVolmeter: boolean;
 
   @Inject() private customizationService: CustomizationService;
 
