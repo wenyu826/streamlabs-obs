@@ -3,7 +3,7 @@
   "description": "Streamlabs streaming software",
   "author": "General Workings, Inc.",
   "license": "GPL-3.0",
-  "version": "0.8.7",
+  "version": "0.8.9-preview.1",
   "main": "main.js",
   "scripts": {
     "compile": "yarn clear && webpack --progress",
@@ -66,13 +66,13 @@
   },
   "cmake-js": {
     "runtime": "electron",
-    "runtimeVersion": "1.7.11",
+    "runtimeVersion": "1.7.12",
     "arch": "x64"
   },
   "dependencies": {
     "aws-sdk": "^2.43.0",
     "backtrace-node": "^0.7.3",
-    "electron-updater": "^2.18.2",
+    "electron-updater": "^2.20.1",
     "electron-window-state": "^4.1.1",
     "font-manager": "git+https://github.com/computerquip-streamlabs/font-manager.git",
     "node-fontinfo": "^0.0.2",
@@ -101,8 +101,8 @@
     "circular-dependency-plugin": "^3.0.0",
     "css-loader": "^0.28.7",
     "devtron": "^1.4.0",
-    "electron": "1.7.11",
-    "electron-builder": "19.52.1",
+    "electron": "1.7.12",
+    "electron-builder": "19.56.0",
     "electron-devtools-installer": "^2.2.1",
     "eslint": "^3.19.0",
     "eslint-config-airbnb": "^14.1.0",
