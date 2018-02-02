@@ -89,6 +89,13 @@ export default class MixerVolmeterGL extends Vue {
     this.timeToNextEvent = VOLMETER_UPDATE_INTERVAL;
     let currentTime = performance.now();
 
+    const locationOfColorShift = gl.getUniformLocation(program, 'u_progress');
+    const locationOfResolution = gl.getUniformLocation(program, 'u_resolution');
+
+    const positionLocation = gl.getAttribLocation(program, 'a_position');
+    gl.enableVertexAttribArray(positionLocation);
+    gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
+
     const render = (time?: number) => {
       if (!time) time = currentTime;
       const dt  = (time - currentTime);
@@ -102,13 +109,6 @@ export default class MixerVolmeterGL extends Vue {
 
       gl.clearColor(1.0, 0.0, 0.0, 1.0);
       gl.clear(gl.COLOR_BUFFER_BIT);
-
-      const positionLocation = gl.getAttribLocation(program, 'a_position');
-      gl.enableVertexAttribArray(positionLocation);
-      gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
-
-      const locationOfColorShift = gl.getUniformLocation(program, 'u_progress');
-      const locationOfResolution = gl.getUniformLocation(program, 'u_resolution');
 
       const iterpolationFactor = Math.min(
         1,
