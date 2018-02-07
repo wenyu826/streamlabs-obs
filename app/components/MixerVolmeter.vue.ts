@@ -74,7 +74,7 @@ export default class MixerVolmeter extends Vue {
 
   subscribeVolmeter() {
     this.volmeterSubscription = this.audioSource.subscribeVolmeter(volmeter => {
-      this.volmeter.setData(Math.min(...volmeter.magnitude), Math.min(...volmeter.peak));
+      this.volmeter.setData(Math.max(...volmeter.magnitude), Math.max(...volmeter.peak));
     });
   }
 
