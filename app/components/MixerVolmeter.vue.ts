@@ -43,8 +43,14 @@ class Volmeter {
   }
 
   draw() {
-    const magScale =  clamp(((-60 - this.data.level) / -60), 0.0, 1.0);
-    const peakScale = clamp(((-60 - this.data.peak) / -60), 0.0, 1.0);
+    let magScale = 0.0;
+    let peakScale = 0.0;
+
+    if (isFinite(this.data.level))
+      magScale =  clamp(((-60 - this.data.level) / -60), 0.0, 1.0);
+
+    if (isFinite(this.data.peak))
+      peakScale = clamp(((-60 - this.data.peak) / -60), 0.0, 1.0);
 
     this.levelElement.style.transform = `scale(${peakScale}, 60.0)`;
     this.peakElement.style.left = `${100 * magScale}%`;
