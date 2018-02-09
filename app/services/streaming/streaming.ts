@@ -171,6 +171,34 @@ export class StreamingService extends StatefulService<IStreamingServiceState> im
     });
   }
 
+  getDelayEnable() {
+    const advancedSettings = this.settingsService.getSettingsFormData('Advanced');
+
+    const streamDelaySettings = advancedSettings.find(category => {
+      return category.nameSubCategory === 'Stream Delay';
+    });
+
+    const delayEnable = streamDelaySettings.parameters.find(parameter => {
+      return parameter.name === 'DelayEnable';
+    });
+
+    return delayEnable.value;
+  }
+
+  getDelaySeconds() {
+    const advancedSettings = this.settingsService.getSettingsFormData('Advanced');
+
+    const streamDelaySettings = advancedSettings.find(category => {
+      return category.nameSubCategory === 'Stream Delay';
+    });
+
+    const delaySec = streamDelaySettings.parameters.find(parameter => {
+      return parameter.name === 'DelaySec';
+    });
+
+    return delaySec.value;
+  }
+
   // Getters / Utilty
 
   get isStreaming() {
