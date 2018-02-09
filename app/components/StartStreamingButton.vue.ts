@@ -39,6 +39,19 @@ export default class StartStreamingButton extends Vue {
       return 'End Stream';
     }
 
-    return 'Go Live';
+    let goLiveLabbel = 'GO LIVE';
+
+    if (this.delayEnable)
+      goLiveLabbel += ' (Delay applied : ' + this.delaySeconds + ')';
+
+    return goLiveLabbel;
+  }
+
+  get delayEnable() {
+    return this.streamingService.getDelayEnable();
+  }
+
+  get delaySeconds() {
+    return this.streamingService.getDelaySeconds();
   }
 }
