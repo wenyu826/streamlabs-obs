@@ -70,6 +70,8 @@
     "node-fontinfo": "^0.0.2",
     "node-libuiohook": "file:./node-libuiohook",
     "obs-studio-node": "https://github.com/stream-labs/obs-studio-node/releases/download/v0.0.17/streamlabs-x86_64-signed.tar.gz",
+    "pouchdb-core": "^6.4.3",
+    "pouchdb-adapter-node-websql": "^6.4.3",
     "rimraf": "^2.6.1",
     "socket.io-client": "2.0.3",
     "uuid": "^3.0.1"
@@ -79,6 +81,7 @@
     "@types/archiver": "^2.0.1",
     "@types/lodash": "^4.14.64",
     "@types/node": "^8.0.0",
+    "@types/pouchdb": "^6.3.2",
     "@types/socket.io-client": "^1.4.31",
     "@types/webdriverio": "^4.8.6",
     "archiver": "^2.0.3",

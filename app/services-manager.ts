@@ -62,6 +62,10 @@ import {
 } from 'services/jsonrpc';
 import { JsonrpcService } from './services/jsonrpc/jsonrpc';
 import { FileManagerService } from 'services/file-manager';
+import { OutputService } from 'services/outputs';
+import { ProviderService } from 'services/providers';
+import { EncoderService } from 'services/encoders';
+import { RtmpOutputService } from 'services/rtmp-output';
 
 const { ipcRenderer } = electron;
 
@@ -124,7 +128,11 @@ export class ServicesManager extends Service {
     JsonrpcService,
     SelectionService,
     Selection,
-    FileManagerService
+    FileManagerService,
+    OutputService,
+    ProviderService,
+    EncoderService,
+    RtmpOutputService
   };
 
   private instances: Dictionary<Service> = {};

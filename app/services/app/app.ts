@@ -18,6 +18,7 @@ import { PerformanceMonitorService } from '../performance-monitor';
 import { SelectionService } from 'services/selection';
 import { SceneCollectionsService } from 'services/scene-collections';
 import { FileManagerService } from 'services/file-manager';
+import { RtmpOutputService } from 'services/rtmp-output';
 
 interface IAppState {
   loading: boolean;
@@ -44,6 +45,7 @@ export class AppService extends StatefulService<IAppState> {
   private autosaveInterval: number;
 
   @Inject() scenesTransitionsService: ScenesTransitionsService;
+  @Inject() rtmpOutputService: RtmpOutputService;
   @Inject() sourcesService: SourcesService;
   @Inject() scenesService: ScenesService;
   @Inject() videoService: VideoService;
@@ -62,7 +64,7 @@ export class AppService extends StatefulService<IAppState> {
     // associated with the user in sentry.
     this.userService;
 
-    this.sceneCollectionsService.initialize().then(() => {
+    const handleSceneConfig = () => {
       this.onboardingService.startOnboardingIfRequired();
 
       electron.ipcRenderer.on('shutdown', () => {
@@ -81,7 +83,17 @@ export class AppService extends StatefulService<IAppState> {
       this.ipcServerService.listen();
       this.tcpServerService.listen();
       this.FINISH_LOADING();
-    });
+    };
+
+    /* We don't wait on this but as long as we make sure 
+     * the scene collections is loaded last, we should
+     * be fine */
+    const asyncInit = async () => {
+      await this.rtmpOutputService.initialize();
+      await this.sceneCollectionsService.initialize().then(handleSceneConfig);
+    };
+
+    asyncInit();
   }
 
   /**
