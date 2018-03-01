@@ -22,6 +22,12 @@
           @click="authPlatform('youtube')">
           <i class="fa" :class="iconForPlatform('youtube')" /> Youtube
         </button>
+        <button
+          class="button button--mixer"
+          :disabled="loadingState"
+          @click="authPlatform('mixer')">
+          <i class="fa" :class="iconForPlatform('mixer')" /> Mixer
+        </button>
       </div>
       <div class="setup-later" v-if="!isSecurityUpgrade">
         <a @click="skipOnboarding">Setup later</a>

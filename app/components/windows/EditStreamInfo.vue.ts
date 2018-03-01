@@ -125,6 +125,7 @@ export default class EditStreamInfo extends Vue {
         this.searchingGames = false;
         if (games && games.length) {
           games.forEach(game => {
+            console.log(game);
             this.gameModel.options.push({
               description: game.name,
               value: game.name
@@ -146,7 +147,7 @@ export default class EditStreamInfo extends Vue {
       );
 
       this.areAvailableProfiles = availableProfiles.length > 0 || genericProfiles.length > 0;
-
+ 
       if (this.areAvailableProfiles) {
         let profiles: IEncoderPreset[] = [];
 
@@ -170,6 +171,7 @@ export default class EditStreamInfo extends Vue {
   // For some reason, v-model doesn't work with ListInput
   onGameInput(gameModel: IListInput<string>) {
     this.gameModel = gameModel;
+    console.log(this.gameModel);
 
     this.loadAvailableProfiles();
   }
@@ -231,6 +233,10 @@ export default class EditStreamInfo extends Vue {
 
   get isYoutube() {
     return this.userService.platform.type === 'youtube';
+  }
+
+  get isMixer() {
+    return this.userService.platform.type === 'mixer';
   }
 
   get submitText() {

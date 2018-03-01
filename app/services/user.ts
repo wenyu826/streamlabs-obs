@@ -18,6 +18,7 @@ import Raven from 'raven-js';
 import { AppService } from 'services/app';
 import { SceneCollectionsService } from 'services/scene-collections';
 import { Subject } from 'rxjs/Subject';
+import { MixerService } from 'services/platforms/mixer';
 
 // Eventually we will support authing multiple platforms at once
 interface IUserServiceState {
@@ -43,6 +44,12 @@ export class UserService extends PersistentStatefulService<IUserServiceState> {
   @mutation()
   private SET_PLATFORM_TOKEN(token: string) {
     this.state.auth.platform.token = token;
+  }
+
+  @mutation()
+  private SET_CHANNEL_ID(id: string) {
+    console.log('setting', id);
+    this.state.auth.platform.channelId = id;
   }
 
   userLogin = new Subject<IPlatformAuth>();
@@ -132,6 +139,12 @@ export class UserService extends PersistentStatefulService<IUserServiceState> {
     }
   }
 
+  get channelId() {
+    if (this.isLoggedIn()) {
+      return this.state.auth.platform.channelId;
+    }
+  }
+
   widgetUrl(type: string) {
     if (this.isLoggedIn()) {
       const host = this.hostsService.streamlabs;
@@ -188,6 +201,9 @@ export class UserService extends PersistentStatefulService<IUserServiceState> {
     this.setRavenContext();
     service.setupStreamSettings(auth);
     await this.sceneCollectionsService.setupNewUser();
+    if (service instanceof MixerService) {
+      await service.getChannelId();
+    }
   }
 
   async logOut() {
@@ -213,17 +229,22 @@ export class UserService extends PersistentStatefulService<IUserServiceState> {
 
     const authWindow = new electron.remote.BrowserWindow({
       ...service.authWindowOptions,
-      alwaysOnTop: true,
+      alwaysOnTop: false,
       show: false,
       webPreferences: {
-        nodeIntegration: false
+        devTools: true,
+        javascript: true,
+        nodeIntegration: false,
       }
     });
 
     authWindow.webContents.on('did-navigate', async (e, url) => {
+      console.log('did nav');
       const parsed = this.parseAuthFromUrl(url);
+      console.log(parsed);
 
       if (parsed) {
+        console.log('here');
         authWindow.close();
         onAuthStart();
         await this.login(service, parsed);
@@ -244,12 +265,17 @@ export class UserService extends PersistentStatefulService<IUserServiceState> {
     this.SET_PLATFORM_TOKEN(token);
   }
 
+  updatePlatformChannelId(id: string) {
+    this.SET_CHANNEL_ID(id);
+  }
+
   /**
    * Parses tokens out of the auth URL
    */
   private parseAuthFromUrl(url: string) {
+    console.log(url);
     const query = URI.parseQuery(URI.parse(url).query);
-
+    console.log(query);
     if (
       query.token &&
       query.platform_username &&

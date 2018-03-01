@@ -27,12 +27,14 @@ class ListInput extends Input<IListInput<TObsValue>> {
   }
 
   onSearchChange(value: string) {
+    console.log(value);
     this.$emit('search-change', value);
   }
 
   get currentValue() {
 
     const option = this.value.options.find((opt: IListOption<string>) => {
+      console.log(opt);
       return this.value.value === opt.value;
     });
 

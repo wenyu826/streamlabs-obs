@@ -7664,9 +7664,9 @@ vue-loader@^13.6.0:
     vue-style-loader "^3.0.0"
     vue-template-es2015-compiler "^1.6.0"
 
-"vue-multiselect@https://github.com/stream-labs/vue-multiselect.git":
+vue-multiselect@^2.0.8:
   version "2.0.8"
-  resolved "https://github.com/stream-labs/vue-multiselect.git#91f8a8d16c86f7773b5c8704bcf7661c55fea71a"
+  resolved "https://registry.yarnpkg.com/vue-multiselect/-/vue-multiselect-2.0.8.tgz#8933c667723b7310d3516b381b834a3da8ca26be"
 
 vue-popperjs@^1.2.2:
   version "1.2.2"
