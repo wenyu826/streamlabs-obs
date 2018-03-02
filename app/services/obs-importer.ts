@@ -11,7 +11,6 @@ import { AudioService } from 'services/audio';
 import { Inject } from 'util/injector';
 import { SceneCollectionsService } from 'services/scene-collections';
 import { nodeObs } from 'services/obs-api';
-import { SettingsService } from 'services/settings';
 
 interface Source {
   name?: string;
@@ -73,7 +72,6 @@ export class ObsImporterService extends Service {
   @Inject('ScenesTransitionsService') transitionsService: ScenesTransitionsService;
   @Inject() sceneCollectionsService: SceneCollectionsService;
   @Inject() audioService: AudioService;
-  @Inject() settingsService: SettingsService;
 
   async load(selectedprofile: string) {
     if (!this.isOBSinstalled()) return;
@@ -102,9 +100,6 @@ export class ObsImporterService extends Service {
 
     nodeObs.OBS_service_resetVideoContext();
     nodeObs.OBS_service_resetAudioContext();
-
-    // Ensure we reload any updated settings
-    this.settingsService.loadSettingsIntoStore();
   }
 
   private async importCollection(collection: ISceneCollection) {
