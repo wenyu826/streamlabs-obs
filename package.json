@@ -70,9 +70,9 @@
     "font-manager": "git+https://github.com/computerquip-streamlabs/font-manager.git",
     "node-fontinfo": "^0.0.2",
     "node-libuiohook": "file:./node-libuiohook",
-    "obs-studio-node": "https://github.com/stream-labs/obs-studio-node/releases/download/v0.0.17/streamlabs-x86_64-signed.tar.gz",
-    "pouchdb-core": "^6.4.3",
+    "obs-studio-node": "https://ci.appveyor.com/api/buildjobs/7bcyi1tkvd24hmh0/artifacts/streamlabs-x86_64-unsigned.tar.gz",
     "pouchdb-adapter-node-websql": "^6.4.3",
+    "pouchdb-core": "^6.4.3",
     "rimraf": "^2.6.1",
     "socket.io-client": "2.0.3",
     "uuid": "^3.0.1"
