@@ -11,7 +11,13 @@ import PouchDB from 'pouchdb-core';
 import PouchDBWebSQL from 'pouchdb-adapter-node-websql';
 import { StatefulService, mutation } from 'services/stateful-service';
 import * as ObjectPath from 'object-path';
-import { ISettings } from './obs-api';
+import { 
+  ISettings, 
+  EVideoFormat, 
+  EColorSpace,
+  ERangeType,
+  EScaleType
+} from './obs-api';
 
 PouchDB.plugin(PouchDBWebSQL);
 
@@ -57,6 +63,9 @@ interface ISettingsState {
     BaseResolution: string;
     OutputResolution: string;
     DownscaleFilter: number;
+    ColorFormat: number;
+    ColorSpace: number;
+    ColorRange: number;
     FPSType: number;
     FPSCommon: number;
     FPSInt: number;
@@ -117,7 +126,10 @@ export class SettingsStorageService extends StatefulService<
       Video: {
         BaseResolution: '1920x1080',
         OutputResolution: '1280x720',
-        DownscaleFilter: 0, /* Bilinear */
+        ColorFormat: EVideoFormat.NV12,
+        ColorSpace: EColorSpace.CS601,
+        ColorRange: ERangeType.Partial,
+        DownscaleFilter: EScaleType.Bilinear,
         FPSType: 0, /* Common FPS Values */
         FPSCommon: 4, /* 30 FPS */
         FPSInt: 30,
