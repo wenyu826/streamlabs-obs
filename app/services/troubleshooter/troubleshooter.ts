@@ -4,6 +4,7 @@ import { INumberInputValue, TFormData } from '../../components/shared/forms/Inpu
 import { ITroubleshooterServiceApi, ITroubleshooterSettings, TIssueCode } from './troubleshooter-api';
 import { WindowsService } from 'services/windows';
 import { Inject } from '../../util/injector';
+import { EPropertyType, ENumberType } from 'services/obs-api';
 
 
 interface ITroubleshooterState {
@@ -39,7 +40,8 @@ export class TroubleshooterService
         value: settings.skippedThreshold,
         name: 'skippedThreshold',
         description: 'Skipped frames threshold',
-        type: 'OBS_PROPERTY_SLIDER',
+        type: EPropertyType.Int,
+        subType: ENumberType.Slider,
         minVal: 0,
         maxVal: 1,
         stepVal: 0.01,
@@ -52,7 +54,8 @@ export class TroubleshooterService
         value: settings.laggedThreshold,
         name: 'laggedThreshold',
         description: 'Lagged frames threshold',
-        type: 'OBS_PROPERTY_SLIDER',
+        type: EPropertyType.Int,
+        subType: ENumberType.Slider,
         minVal: 0,
         maxVal: 1,
         stepVal: 0.01,
@@ -65,7 +68,8 @@ export class TroubleshooterService
         value: settings.droppedThreshold,
         name: 'droppedThreshold',
         description: 'Dropped frames threshold',
-        type: 'OBS_PROPERTY_SLIDER',
+        type: EPropertyType.Int,
+        subType: ENumberType.Slider,
         minVal: 0,
         maxVal: 1,
         stepVal: 0.01,

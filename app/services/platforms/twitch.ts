@@ -1,7 +1,6 @@
 import { Service } from '../service';
 import { IPlatformService, IPlatformAuth, IChannelInfo, IGame } from '.';
 import { HostsService } from '../hosts';
-import { SettingsService } from '../settings';
 import { Inject } from '../../util/injector';
 import { handleErrors } from '../../util/requests';
 import { UserService } from '../user';
@@ -9,7 +8,6 @@ import { UserService } from '../user';
 export class TwitchService extends Service implements IPlatformService {
 
   @Inject() hostsService: HostsService;
-  @Inject() settingsService: SettingsService;
   @Inject() userService: UserService;
 
   authWindowOptions: Electron.BrowserWindowConstructorOptions = {
@@ -52,23 +50,7 @@ export class TwitchService extends Service implements IPlatformService {
   // TODO: Some of this code could probably eventually be
   // shared with the Youtube platform.
   setupStreamSettings(auth: IPlatformAuth) {
-    this.fetchStreamKey().then(key => {
-      const settings = this.settingsService.getSettingsFormData('Stream');
-
-      settings.forEach(subCategory => {
-        subCategory.parameters.forEach(parameter => {
-          if (parameter.name === 'service') {
-            parameter.value = 'Twitch';
-          }
-
-          if (parameter.name === 'key') {
-            parameter.value = key;
-          }
-        });
-      });
-
-      this.settingsService.setSettings('Stream', settings);
-    });
+    console.warn('Not implemented.');
   }
 
 

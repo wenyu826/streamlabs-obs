@@ -18,7 +18,6 @@ import { OnboardingService } from './services/onboarding';
 import { PerformanceService } from './services/performance';
 import { PerformanceMonitorService } from './services/performance-monitor';
 import { PersistentStatefulService } from './services/persistent-stateful-service';
-import { SettingsService } from './services/settings';
 import { SourcesService, Source } from './services/sources';
 import { UserService } from './services/user';
 import { VideoService } from './services/video';
@@ -66,6 +65,7 @@ import { OutputService } from 'services/outputs';
 import { ProviderService } from 'services/providers';
 import { EncoderService } from 'services/encoders';
 import { RtmpOutputService } from 'services/rtmp-output';
+import { SettingsStorageService } from 'services/settings';
 
 const { ipcRenderer } = electron;
 
@@ -98,7 +98,6 @@ export class ServicesManager extends Service {
     PerformanceMonitorService,
     PersistentStatefulService,
     ScenesTransitionsService,
-    SettingsService,
     SourceFiltersService,
     SourcesService,
     Source,
@@ -132,7 +131,8 @@ export class ServicesManager extends Service {
     OutputService,
     ProviderService,
     EncoderService,
-    RtmpOutputService
+    RtmpOutputService,
+    SettingsStorageService
   };
 
   private instances: Dictionary<Service> = {};

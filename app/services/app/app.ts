@@ -19,6 +19,7 @@ import { SelectionService } from 'services/selection';
 import { SceneCollectionsService } from 'services/scene-collections';
 import { FileManagerService } from 'services/file-manager';
 import { RtmpOutputService } from 'services/rtmp-output';
+import { SettingsStorageService } from 'services/settings';
 
 interface IAppState {
   loading: boolean;
@@ -44,6 +45,7 @@ export class AppService extends StatefulService<IAppState> {
 
   private autosaveInterval: number;
 
+  @Inject() settingsStorageService: SettingsStorageService;
   @Inject() scenesTransitionsService: ScenesTransitionsService;
   @Inject() rtmpOutputService: RtmpOutputService;
   @Inject() sourcesService: SourcesService;
@@ -89,6 +91,7 @@ export class AppService extends StatefulService<IAppState> {
      * the scene collections is loaded last, we should
      * be fine */
     const asyncInit = async () => {
+      await this.settingsStorageService.initialize();
       await this.rtmpOutputService.initialize();
       await this.sceneCollectionsService.initialize().then(handleSceneConfig);
     };

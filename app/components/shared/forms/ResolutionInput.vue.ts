@@ -1,5 +1,5 @@
 import { Component, Prop } from 'vue-property-decorator';
-import { TObsType, IListInput, IListOption, Input, TObsValue } from './Input';
+import { IListInput, IListOption, Input, TObsValue } from './Input';
 import { Multiselect } from 'vue-multiselect';
 
 @Component({
@@ -7,8 +7,6 @@ import { Multiselect } from 'vue-multiselect';
 })
 
 class ResolutionInput extends Input<IListInput<TObsValue>> {
-
-  static obsType: TObsType;
 
   @Prop()
   value: IListInput<TObsValue>;
@@ -53,7 +51,5 @@ class ResolutionInput extends Input<IListInput<TObsValue>> {
   }
 
 }
-
-ResolutionInput.obsType = 'OBS_INPUT_RESOLUTION_LIST';
 
 export default ResolutionInput;

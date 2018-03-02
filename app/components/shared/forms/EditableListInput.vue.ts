@@ -2,7 +2,7 @@ import _ from 'lodash';
 import electron from 'electron';
 import Selector from '../../Selector.vue';
 import { Component, Prop } from 'vue-property-decorator';
-import  { IEditableListInputValue, Input, TObsType } from './Input';
+import  { IEditableListInputValue, Input } from './Input';
 import { Menu } from '../../../util/menus/Menu';
 
 interface ISelectorSortEventData {
@@ -14,8 +14,6 @@ interface ISelectorSortEventData {
   components: { Selector }
 })
 class EditableListProperty extends Input<IEditableListInputValue> {
-
-  static obsType: TObsType;
 
   @Prop()
   value: IEditableListInputValue;
@@ -106,7 +104,5 @@ class EditableListProperty extends Input<IEditableListInputValue> {
   }
 
 }
-
-EditableListProperty.obsType = 'OBS_PROPERTY_EDITABLE_LIST';
 
 export default EditableListProperty;

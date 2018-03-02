@@ -1,10 +1,10 @@
-import { SettingsService } from '../services/settings';
 import { Inject } from '../util/injector';
 import { ScenesService, SceneItem } from '../services/scenes';
 import { VideoService, Display } from '../services/video';
 import { WindowsService } from '../services/windows';
 import { ScalableRectangle } from '../util/ScalableRectangle';
 import { SelectionService } from 'services/selection';
+import { SettingsStorageService } from 'services/settings';
 import electron from 'electron';
 
 const { webFrame, screen } = electron;
@@ -45,12 +45,11 @@ interface IEdgeCollection {
 // Encapsulates logic for dragging sources in the overlay editor
 class DragHandler {
 
-  @Inject() private settingsService: SettingsService;
+  @Inject() private settingsStorageService: SettingsStorageService;
   @Inject() private scenesService: ScenesService;
   @Inject() private videoService: VideoService;
   @Inject() private windowsService: WindowsService;
   @Inject() private selectionService: SelectionService;
-
 
   // Settings
   snapEnabled: boolean;
@@ -81,11 +80,11 @@ class DragHandler {
   // display: The OBS display object we are operating on
   constructor(startEvent: MouseEvent, display: Display) {
     // Load some settings we care about
-    this.snapEnabled = this.settingsService.state.General.SnappingEnabled;
-    this.renderedSnapDistance = this.settingsService.state.General.SnapDistance;
-    this.screenSnapping = this.settingsService.state.General.ScreenSnapping;
-    this.sourceSnapping = this.settingsService.state.General.SourceSnapping;
-    this.centerSnapping = this.settingsService.state.General.CenterSnapping;
+    this.snapEnabled = this.settingsStorageService.state.Settings.General.SnappingEnabled;
+    this.renderedSnapDistance = this.settingsStorageService.state.Settings.General.SnapDistance;
+    this.screenSnapping = this.settingsStorageService.state.Settings.General.ScreenSnapping;
+    this.sourceSnapping = this.settingsStorageService.state.Settings.General.SourceSnapping;
+    this.centerSnapping = this.settingsStorageService.state.Settings.General.CenterSnapping;
 
     // Load some attributes about the video canvas
     this.baseWidth = this.videoService.baseWidth;

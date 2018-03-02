@@ -1,5 +1,4 @@
 import { Service } from './service';
-import { SettingsService } from './settings';
 import { nodeObs } from './obs-api';
 import electron from 'electron';
 import { Inject } from '../util/injector';
@@ -14,7 +13,6 @@ const { remote } = electron;
 const DISPLAY_ELEMENT_POLLING_INTERVAL = 500;
 
 export class Display {
-  @Inject() settingsService: SettingsService;
   @Inject() videoService: VideoService;
   @Inject() windowsService: WindowsService;
   @Inject() selectionService: SelectionService;
@@ -134,27 +132,9 @@ export class Display {
 }
 
 export class VideoService extends Service {
-
-  @Inject()
-  settingsService: SettingsService;
-
   activeDisplays: Dictionary<Display> = {};
 
   init() {
-    this.settingsService.loadSettingsIntoStore();
-
-    // Watch for changes to the base resolution.
-    // This seems super freaking hacky.
-    this.settingsService.store.watch(state => {
-      return state.SettingsService.Video.Base;
-    }, () => {
-      // This gives the setting time to propagate
-      setTimeout(() => {
-        Object.values(this.activeDisplays).forEach(display => {
-          display.refreshOutputRegion();
-        });
-      }, 1000);
-    });
   }
 
   createDisplay() {
@@ -204,13 +184,9 @@ export class VideoService extends Service {
   }
 
   get baseResolution() {
-    const [widthStr, heightStr] = this.settingsService.state.Video.Base.split('x');
-    const width = parseInt(widthStr, 10);
-    const height = parseInt(heightStr, 10);
-
     return {
-      width,
-      height
+      width: 1280,
+      height: 720
     };
   }
 

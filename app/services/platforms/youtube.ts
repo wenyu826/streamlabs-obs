@@ -1,7 +1,6 @@
 import { Service } from '../service';
 import { IPlatformService, IChannelInfo, IPlatformAuth } from '.';
 import { HostsService } from '../hosts';
-import { SettingsService } from '../settings';
 import { Inject } from '../../util/injector';
 import { handleErrors } from '../../util/requests';
 import { UserService } from '../user';
@@ -9,7 +8,6 @@ import { UserService } from '../user';
 export class YoutubeService extends Service implements IPlatformService {
 
   @Inject() hostsService: HostsService;
-  @Inject() settingsService: SettingsService;
   @Inject() userService: UserService;
 
   authWindowOptions: Electron.BrowserWindowConstructorOptions = {
@@ -38,23 +36,7 @@ export class YoutubeService extends Service implements IPlatformService {
   }
 
   setupStreamSettings(auth: IPlatformAuth) {
-    this.fetchStreamKey().then(streamKey => {
-      const settings = this.settingsService.getSettingsFormData('Stream');
-
-      settings.forEach(subCategory => {
-        subCategory.parameters.forEach(parameter => {
-          if (parameter.name === 'service') {
-            parameter.value = 'YouTube / YouTube Gaming';
-          }
-
-          if (parameter.name === 'key') {
-            parameter.value = streamKey;
-          }
-        });
-      });
-
-      this.settingsService.setSettings('Stream', settings);
-    });
+    /* TODO FIXME */
   }
 
   fetchDescription(): Promise<string> {

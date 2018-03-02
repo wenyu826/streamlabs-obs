@@ -2,8 +2,8 @@
   <div>
     <div v-for="(parameter, inputIndex) in value">
       <component
-        v-if="parameter.visible && propertyComponentForType(parameter.type)"
-        :is="propertyComponentForType(parameter.type)"
+        v-if="parameter.visible && propertyComponentForType(parameter.type, parameter.subType)"
+        :is="propertyComponentForType(parameter.type, parameter.subType)"
         :value="value[inputIndex]"
         @input="value => onInputHandler(value, inputIndex)"
       />

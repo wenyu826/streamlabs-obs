@@ -1,10 +1,8 @@
 import { Component, Prop } from 'vue-property-decorator';
-import { IFormInput, TObsType, Input } from './Input';
+import { IFormInput, Input } from './Input';
 
 @Component
 class TextInput extends Input<IFormInput<string>> {
-
-  static obsType: TObsType[];
 
   @Prop()
   value: IFormInput<string>;
@@ -21,7 +19,5 @@ class TextInput extends Input<IFormInput<string>> {
   }
 
 }
-
-TextInput.obsType = ['OBS_PROPERTY_EDIT_TEXT', 'OBS_PROPERTY_TEXT'];
 
 export default TextInput;

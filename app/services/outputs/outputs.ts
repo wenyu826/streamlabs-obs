@@ -5,29 +5,91 @@ import { ipcRenderer } from 'electron';
 import { EncoderService } from '../encoders';
 import { ProviderService } from '../providers';
 import { Inject } from '../../util/injector';
+import { PropertiesManager } from '../sources/properties-managers/properties-manager';
+import { DefaultManager } from '../sources/properties-managers/default-manager';
 import * as obs from '../obs-api';
 
 import PouchDB from 'pouchdb-core';
 import PouchDBWebSQL from 'pouchdb-adapter-node-websql';
 PouchDB.plugin(PouchDBWebSQL);
 
-interface IOutputServiceState {
-  outputs: Dictionary<FOutput>;
-}
+type TOutputServiceState = Dictionary<FOutput>;
 
-export class OutputService extends StatefulService<IOutputServiceState> {
+export class OutputService extends StatefulService<TOutputServiceState> {
   private initialized = false;
   private db = new PouchDB('Outputs.sqlite3', { adapter: 'websql' });
+  private propManagers: Dictionary<PropertiesManager> = {};
+  private putQueues: Dictionary<any[]> = {};
 
   @Inject() providerService: ProviderService;
   @Inject() encoderService: EncoderService;
   
-  static initialState: IOutputServiceState = {
-    outputs: {}
-  };
+  static initialState: TOutputServiceState = {};
 
   static getUniqueId(): string {
     return 'output_' + ipcRenderer.sendSync('getUniqueId');
+  }
+
+  private async handleChange(response: PouchDB.Core.Response) {
+    const queue = this.putQueues[response.id];
+
+    this.UPDATE_REVISION(response.id, response.rev);
+    
+    queue.shift();
+
+    if (queue.length > 0) {
+      this.db.put({
+        ... queue[0],
+        _id: response.id,
+        _rev: response.rev
+      }).then((response) => { this.handleChange(response); });
+    }
+  }
+
+  private async handleDeletion(response: PouchDB.Core.Response) {
+    this.REMOVE_OUTPUT(response.id);
+
+    this.propManagers[response.id].destroy();
+    delete this.propManagers[response.id];
+  }
+
+  private buildChange(uniqueId: string, output: FOutput) {
+    return {
+      _id:      uniqueId,
+      _rev:     output.revision,
+      type:     output.type,
+      settings: output.settings,
+      audioEncoder: output.audioEncoder,
+      videoEncoder: output.videoEncoder,
+      provider: output.provider
+    };
+  }
+
+  private queueChange(uniqueId: string) {
+    const queue = this.putQueues[uniqueId];
+    const output = this.state[uniqueId];
+
+    const change = this.buildChange(uniqueId, output);
+
+    console.log(change);
+
+    if (queue.push(change) !== 1) {
+      return;
+    }
+
+    this.db.put(change)
+      .then((response) => { this.handleChange(response); });
+  }
+
+  private async queueDeletion(uniqueId: string) {
+    const queue = this.putQueues[uniqueId];
+    const output = this.state[uniqueId];
+
+    /* The array is dead, just empty it */
+    queue.length = 0;
+
+    this.db.remove({ _id: uniqueId, _rev: output.revision })
+      .then((response) => { this.handleDeletion(response); });
   }
 
   private syncConfig(result: any): void {
@@ -36,7 +98,7 @@ export class OutputService extends StatefulService<IOutputServiceState> {
 
       console.log(entry);
 
-      const output: FOutput = { 
+      const output: FOutput = {
         revision: entry._rev,
         type: entry.type,
         settings: entry.settings,
@@ -52,6 +114,11 @@ export class OutputService extends StatefulService<IOutputServiceState> {
 
       this.ADD_OUTPUT(entry._id, output);
       FOutput.init(output.type, entry._id, output.settings);
+
+      this.propManagers[entry._id] = 
+        new DefaultManager(obs.OutputFactory.fromName(entry._id), {});
+
+      this.putQueues[entry._id] = [];
     }
   }
 
@@ -65,6 +132,11 @@ export class OutputService extends StatefulService<IOutputServiceState> {
     }).then((result: any) => { this.syncConfig(result); });
 
     this.initialized = true;
+  }
+
+  @mutation()
+  private UPDATE_REVISION(uniqueId: string, revision: string) {
+    this.state[uniqueId].revision = revision;
   }
 
   @mutation()
@@ -84,12 +156,6 @@ export class OutputService extends StatefulService<IOutputServiceState> {
     videoEncoderId: string
   ) {
     const fOutput = this.state[uniqueId];
-
-    if (!fOutput) {
-      console.log('State is bad!');
-      console.log(`${uniqueId}`);
-      console.log(`${this.state.outputs}`);
-    }
 
     fOutput.audioEncoder = audioEncoderId;
     fOutput.videoEncoder = videoEncoderId;
@@ -114,17 +180,14 @@ export class OutputService extends StatefulService<IOutputServiceState> {
   }
 
   addOutput(uniqueId: string, output: FOutput) {
+    const obsOutput = obs.OutputFactory.fromName(uniqueId);
     this.ADD_OUTPUT(uniqueId, output);
 
     /* No need for revision here since this is creation */
-    this.db.put({
-      _id:      uniqueId,
-      type:     output.type,
-      settings: output.settings,
-      audioEncoder: output.audioEncoder,
-      videoEncoder: output.videoEncoder,
-      provider: output.provider
-    });
+
+    this.putQueues[uniqueId] = [];
+    this.queueChange(uniqueId);
+    this.propManagers[uniqueId] = new DefaultManager(obsOutput, {});
   }
 
   removeOutput(uniqueId: string) {
@@ -132,9 +195,7 @@ export class OutputService extends StatefulService<IOutputServiceState> {
     const output = obs.OutputFactory.fromName(uniqueId);
     output.release();
 
-    this.REMOVE_OUTPUT(uniqueId);
-
-    // FIXME this.config.delete(uniqueId);
+    this.queueDeletion(uniqueId);
   }
 
   startOutput(uniqueId: string) {
@@ -164,18 +225,23 @@ export class OutputService extends StatefulService<IOutputServiceState> {
     output.setVideoEncoder(videoEncoder);
 
     this.UPDATE_ENCODERS(uniqueId, audioEncoderId, videoEncoderId);
-    // FIXME this.config.set(`${uniqueId}.audioEncoder`, audioEncoderId);
-    // FIXME this.config.set(`${uniqueId}.videoEncoder`, videoEncoderId);
+
+    this.queueChange(uniqueId);
   }
 
-  setOutputService(uniqueId: string, serviceId: string) {
+  setOutputProvider(uniqueId: string, serviceId: string) {
     const service = obs.ServiceFactory.fromName(serviceId);
     const output = obs.OutputFactory.fromName(uniqueId);
 
     output.service = service;
 
     this.UPDATE_PROVIDER(uniqueId, serviceId);
-    // FIXME this.config.set(`${uniqueId}.provider`, serviceId);
+
+    this.queueChange(uniqueId);
+  }
+
+  getOutputProvider(uniqueId: string): string {
+    return this.state[uniqueId].provider;
   }
 
   isOutputActive(uniqueId: string): boolean {
@@ -189,4 +255,8 @@ export class OutputService extends StatefulService<IOutputServiceState> {
 
     return false;
   }
+
+  /* Output properties are garbage. We don't have 
+   * form data for it since the properties are
+   * pretty much unusable */
 }

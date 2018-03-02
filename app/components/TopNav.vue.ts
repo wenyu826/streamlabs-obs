@@ -1,12 +1,12 @@
 import Vue from 'vue';
 import { Component, Prop } from 'vue-property-decorator';
 import { Inject } from '../util/injector';
-import { CustomizationService } from '../services/customization';
-import { NavigationService } from '../services/navigation';
-import { UserService } from '../services/user';
+import { CustomizationService } from 'services/customization';
+import { NavigationService } from 'services/navigation';
+import { UserService } from 'services/user';
+import { WindowsService } from 'services/windows';
 import electron from 'electron';
 import Login from './Login.vue';
-import { SettingsService } from '../services/settings';
 import Utils from '../services/utils';
 
 
@@ -15,7 +15,7 @@ import Utils from '../services/utils';
 })
 export default class TopNav extends Vue {
 
-  @Inject() settingsService: SettingsService;
+  @Inject() windowsService: WindowsService;
   @Inject() customizationService: CustomizationService;
   @Inject() navigationService: NavigationService;
   @Inject() userService: UserService;
@@ -45,7 +45,14 @@ export default class TopNav extends Vue {
   }
 
   openSettingsWindow() {
-    this.settingsService.showSettings();
+    this.windowsService.showWindow({
+      componentName: 'Settings',
+      queryParams: { undefined },
+      size: {
+        width: 800,
+        height: 800
+      }
+    });
   }
 
   toggleNightTheme() {

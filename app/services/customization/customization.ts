@@ -8,6 +8,7 @@ import {
 } from './customization-api';
 import { IFormInput, INumberInputValue, TFormData } from '../../components/shared/forms/Input';
 import Utils from 'services/utils';
+import { EPropertyType, ENumberType } from 'services/obs-api';
 
 const LIVEDOCK_MIN_SIZE = 0.15;
 const LIVEDOCK_MAX_SIZE = 0.5;
@@ -104,7 +105,7 @@ export class CustomizationService
         value: settings.nightMode,
         name: 'nightMode',
         description: 'Night mode',
-        type: 'OBS_PROPERTY_BOOL',
+        type: EPropertyType.Boolean,
         visible: true,
         enabled: true,
       },
@@ -113,7 +114,7 @@ export class CustomizationService
         value: settings.leftDock,
         name: 'leftDock',
         description: 'Show the live dock (chat) on the left side',
-        type: 'OBS_PROPERTY_BOOL',
+        type: EPropertyType.Boolean,
         visible: true,
         enabled: true,
       },
@@ -122,7 +123,8 @@ export class CustomizationService
         value: settings.chatZoomFactor,
         name: 'chatZoomFactor',
         description: 'Chat Text Size',
-        type: 'OBS_PROPERTY_SLIDER',
+        type: EPropertyType.Int,
+        subType: ENumberType.Slider,
         minVal: 0.25,
         maxVal: 2,
         stepVal: 0.25,
@@ -135,7 +137,8 @@ export class CustomizationService
         value: settings.livedockSize,
         name: 'livedockSize',
         description: 'Chat Width',
-        type: 'OBS_PROPERTY_SLIDER',
+        type: EPropertyType.Int,
+        subType: ENumberType.Slider,
         minVal: LIVEDOCK_MIN_SIZE,
         maxVal: LIVEDOCK_MAX_SIZE,
         stepVal: 0.01,
@@ -148,7 +151,7 @@ export class CustomizationService
         value: settings.enableBTTVEmotes,
         name: 'enableBTTVEmotes',
         description: 'Enable BetterTTV emotes for Twitch',
-        type: 'OBS_PROPERTY_BOOL',
+        type: EPropertyType.Boolean,
         visible: true,
         enabled: true,
       }
@@ -162,7 +165,7 @@ export class CustomizationService
         value: this.state.experimental.sceneItemsGrouping,
         name: 'sceneItemsGrouping',
         description: 'Scene Items Grouping',
-        type: 'OBS_PROPERTY_BOOL',
+        type: EPropertyType.Boolean,
         visible: true,
         enabled: true,
       }

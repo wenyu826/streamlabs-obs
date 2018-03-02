@@ -72,7 +72,7 @@ export class RtmpOutputService extends StatefulService<RtmpOutputServiceState> {
     this.encoderService.addVideoEncoder(videoEncoderId, videoEncoder);
     this.outputService.addOutput(outputId, fOutput);
 
-    this.outputService.setOutputService(outputId, providerId);
+    this.outputService.setOutputProvider(outputId, providerId);
     this.outputService.setOutputEncoders(
       outputId,
       audioEncoderId,
@@ -127,5 +127,51 @@ export class RtmpOutputService extends StatefulService<RtmpOutputServiceState> {
 
   isActive(): boolean {
     return this.outputService.isOutputActive(this.state.rtmpOutputId);
+  }
+
+  getProviderId(): string {
+    return this.outputService.getOutputProvider(this.state.rtmpOutputId);
+  }
+
+  getOutputId() {
+    return this.state.rtmpOutputId;
+  }
+
+  private isValidProviderType(type: string): boolean {
+    switch (type) {
+      case 'rtmp_common':
+      case 'rtmp_custom':
+        return true;
+    }
+
+    return false;
+  }
+
+  /* The functions below surgically removes
+   * parts of the output and change them out. 
+   * These must be taken care of else we'll be
+   * put in a really weird state (audio missing,
+   * video not encoded correctly, etc.) */
+  setProviderType(type: string) {
+    const outputId = this.state.rtmpOutputId;
+    const providerId = ProviderService.getUniqueId();
+    const oldProviderId = 
+      this.outputService.getOutputProvider(outputId);
+
+    if (!this.isValidProviderType(type)) {
+      throw Error('Invalid provider type given');
+    }
+
+    const provider = new FProvider(
+      type,
+      providerId
+    );
+
+    this.providerService.addProvider(providerId, provider);
+
+    /* TODO FIXME We need to make sure we're not actively
+     * using this output, otherwise weird things can happen. */
+    this.outputService.setOutputProvider(outputId, providerId);
+    this.providerService.removeProvider(oldProviderId);
   }
 }

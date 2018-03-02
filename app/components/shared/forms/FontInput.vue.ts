@@ -1,5 +1,5 @@
 import { Component, Prop } from 'vue-property-decorator';
-import { Input, IFormInput, TObsType, IFont, IGoogleFont } from './Input';
+import { Input, IFormInput, IFont, IGoogleFont } from './Input';
 import GoogleFontSelector from './GoogleFontSelector.vue';
 import SystemFontSelector from './SystemFontSelector.vue';
 
@@ -7,8 +7,6 @@ import SystemFontSelector from './SystemFontSelector.vue';
   components: { GoogleFontSelector, SystemFontSelector }
 })
 class FontInput extends Input<IFormInput<IFont>> {
-
-  static obsType: TObsType;
 
   @Prop()
   value: IFormInput<IFont>;
@@ -48,7 +46,5 @@ class FontInput extends Input<IFormInput<IFont>> {
   }
 
 }
-
-FontInput.obsType = 'OBS_PROPERTY_FONT';
 
 export default FontInput;

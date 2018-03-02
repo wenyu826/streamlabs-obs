@@ -35,7 +35,7 @@ export abstract class PropertiesManager implements IPropertyManager {
    * @param obsSource The source this class manages
    * @param settings The manager settings.  These are *NOT* OBS settings
    */
-  constructor(public obsSource: obs.ISource, settings: Dictionary<any>) {
+  constructor(public obsSource: obs.IConfigurable, settings: Dictionary<any>) {
     this.settings = {};
     this.init();
     this.applySettings(settings);

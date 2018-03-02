@@ -1,10 +1,8 @@
 import { Component, Prop } from 'vue-property-decorator';
-import { TObsType, Input, INumberInputValue } from './Input';
+import { Input, INumberInputValue } from './Input';
 
 @Component
 class IntInput extends Input<INumberInputValue> {
-
-  static obsType: TObsType[];
 
   @Prop()
   value: INumberInputValue;
@@ -15,9 +13,6 @@ class IntInput extends Input<INumberInputValue> {
 
   updateValue(value: string) {
     let formattedValue = String(isNaN(parseInt(value)) ? 0 : parseInt(value));
-    if (this.value.type == 'OBS_PROPERTY_UINT' && Number(formattedValue) < 0) {
-      formattedValue = '0';
-    }
 
     if (this.value.minVal !== void 0 && Number(value) < this.value.minVal) {
       formattedValue = String(this.value.minVal);
@@ -54,7 +49,5 @@ class IntInput extends Input<INumberInputValue> {
   }
 
 }
-
-IntInput.obsType = ['OBS_PROPERTY_INT', 'OBS_PROPERTY_UINT'];
 
 export default IntInput;

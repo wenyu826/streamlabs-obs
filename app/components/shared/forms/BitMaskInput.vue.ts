@@ -1,11 +1,9 @@
 import { Component, Prop, Watch } from 'vue-property-decorator';
-import { Input, IFormInput, TObsType, IBitmaskInput } from './Input';
+import { Input, IFormInput, IBitmaskInput } from './Input';
 import { EBit, default as Utils } from '../../../services/utils';
 
 @Component
 class BitMaskInput extends Input<IBitmaskInput> {
-
-  static obsType: TObsType;
 
   @Prop()
   value: IBitmaskInput;
@@ -28,7 +26,5 @@ class BitMaskInput extends Input<IBitmaskInput> {
   }
 
 }
-
-BitMaskInput.obsType = 'OBS_PROPERTY_BITMASK';
 
 export default BitMaskInput;

@@ -6,7 +6,7 @@
 
   <div slot="content" class="settings">
     <NavMenu v-model="categoryName" class="side-menu">
-      <NavItem
+    <NavItem
         v-for="category in categoryNames"
         :key="category"
         :to="category"
@@ -17,6 +17,10 @@
     </NavMenu>
     <div class="settings-container">
       <extra-settings v-if="categoryName === 'General'" />
+      <rtmp-output-settings v-if="categoryName === 'Output'" />
+      <audio-settings v-if="categoryName === 'Audio'" />
+      <video-settings v-if="categoryName === 'Video'" />
+      <stream-settings v-if="categoryName === 'Stream'" />
       <hotkeys v-if="categoryName === 'Hotkeys'" />
       <api-settings v-if="categoryName === 'API'" />
       <overlay-settings v-if="categoryName === 'Overlays'" />
@@ -25,8 +29,7 @@
       <experimental-settings v-if="categoryName === 'Experimental'" />
       <GenericFormGroups
         v-if="!['Hotkeys', 'API', 'Overlays', 'Notifications', 'Appearance', 'Experimental'].includes(categoryName)"
-        v-model="settingsData"
-        @input="save" />
+      />
     </div>
   </div>
 </modal-layout>

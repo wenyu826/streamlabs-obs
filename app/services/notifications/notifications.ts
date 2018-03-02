@@ -12,6 +12,7 @@ import {
   INotificationsServiceApi,
   INotificationsSettings
 } from './notifications-api';
+import { EPropertyType } from 'services/obs-api';
 
 interface INotificationsState {
   settings: INotificationsSettings;
@@ -107,7 +108,7 @@ export class NotificationsService extends PersistentStatefulService<
         value: settings.enabled,
         name: 'enabled',
         description: 'Enable notifications',
-        type: 'OBS_PROPERTY_BOOL',
+        type: EPropertyType.Boolean,
         visible: true,
         enabled: true
       },
@@ -116,7 +117,7 @@ export class NotificationsService extends PersistentStatefulService<
         value: settings.playSound,
         name: 'playSound',
         description: 'Enable sound',
-        type: 'OBS_PROPERTY_BOOL',
+        type: EPropertyType.Boolean,
         visible: true,
         enabled: settings.enabled
       }

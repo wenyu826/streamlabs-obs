@@ -144,10 +144,13 @@ export class AudioService extends StatefulService<IAudioSourcesState> implements
 
   getDevices(): IAudioDevice[] {
     const devices: IAudioDevice[] = [];
-    const obsAudioInput = obs.InputFactory.create('wasapi_input_capture', ipcRenderer.sendSync('getUniqueId'));
-    const obsAudioOutput = obs.InputFactory.create('wasapi_output_capture', ipcRenderer.sendSync('getUniqueId'));
+    const obsInputProp =
+      obs.Global.getProperties('wasapi_input_capture', obs.EObjectType.Source);
+      
+    const obsOutputProp =
+      obs.Global.getProperties('wasapi_output_capture', obs.EObjectType.Source);
 
-    (obsAudioInput.properties.get('device_id') as obs.IListProperty).details.items
+    (obsInputProp.get('device_id') as obs.IListProperty).details.items
       .forEach((item: { name: string, value: string}) => {
         devices.push({
           id: item.value,
@@ -156,7 +159,7 @@ export class AudioService extends StatefulService<IAudioSourcesState> implements
         });
       });
 
-    (obsAudioOutput.properties.get('device_id') as obs.IListProperty).details.items
+    (obsOutputProp.get('device_id') as obs.IListProperty).details.items
       .forEach((item: { name: string, value: string}) => {
         devices.push({
           id: item.value,
@@ -165,8 +168,6 @@ export class AudioService extends StatefulService<IAudioSourcesState> implements
         });
       });
 
-    obsAudioInput.release();
-    obsAudioOutput.release();
     return devices;
   }
 
@@ -284,6 +285,7 @@ export class AudioSource implements IAudioSourceApi {
   }
 
   getSettingsForm(): TFormData {
+    console.warn('FIXME TODO');
 
     return [
       <INumberInputValue>{
@@ -295,7 +297,8 @@ export class AudioSource implements IAudioSourceApi {
         enabled: true,
         minVal: 0,
         maxVal: 100,
-        type: 'OBS_PROPERTY_INT'
+        type: obs.EPropertyType.Int,
+        subType: obs.ENumberType.Scroller
       },
 
       <IFormInput<boolean>> {
@@ -303,7 +306,7 @@ export class AudioSource implements IAudioSourceApi {
         name: 'forceMono',
         description: 'Downmix to Mono',
         showDescription: false,
-        type: 'OBS_PROPERTY_BOOL',
+        type: obs.EPropertyType.Boolean,
         visible: true,
         enabled: true,
       },
@@ -313,7 +316,8 @@ export class AudioSource implements IAudioSourceApi {
         name: 'syncOffset',
         description: 'Sync Offset (ms)',
         showDescription: false,
-        type: 'OBS_PROPERTY_INT',
+        type: obs.EPropertyType.Int,
+        subType: obs.ENumberType.Scroller,
         visible: true,
         enabled: true,
       },
@@ -323,7 +327,7 @@ export class AudioSource implements IAudioSourceApi {
         name: 'monitoringType',
         description: 'Audio Monitoring',
         showDescription: false,
-        type: 'OBS_PROPERTY_LIST',
+        type: obs.EPropertyType.List,
         visible: true,
         enabled: true,
         options: [
@@ -333,17 +337,17 @@ export class AudioSource implements IAudioSourceApi {
         ]
       },
 
-
-      <IBitmaskInput> {
-        value: this.audioMixers,
-        name: 'audioMixers',
-        description: 'Tracks',
-        showDescription: false,
-        type: 'OBS_PROPERTY_BITMASK',
-        visible: true,
-        enabled: true,
-        size: 6
-      }
+      // FIXME TODO
+      // <IBitmaskInput> {
+      //   value: this.audioMixers,
+      //   name: 'audioMixers',
+      //   description: 'Tracks',
+      //   showDescription: false,
+      //   type: 'OBS_PROPERTY_BITMASK',
+      //   visible: true,
+      //   enabled: true,
+      //   size: 6
+      // }
     ];
   }
 

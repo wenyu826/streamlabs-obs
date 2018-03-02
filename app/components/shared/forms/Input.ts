@@ -12,31 +12,24 @@ import {
 } from '../../../util/properties-type-guards';
 
 /**
- * all possible OBS properties types
- */
-export declare type TObsType =
-  'OBS_PROPERTY_BOOL' |
-  'OBS_PROPERTY_INT' |
-  'OBS_PROPERTY_LIST' |
-  'OBS_PROPERTY_PATH' |
-  'OBS_PROPERTY_FILE' |
-  'OBS_PROPERTY_EDIT_TEXT' |
-  'OBS_PROPERTY_TEXT' |
-  'OBS_PROPERTY_UINT' |
-  'OBS_PROPERTY_COLOR' |
-  'OBS_PROPERTY_DOUBLE' |
-  'OBS_PROPERTY_FLOAT' |
-  'OBS_PROPERTY_SLIDER' |
-  'OBS_PROPERTY_FONT' |
-  'OBS_PROPERTY_EDITABLE_LIST' |
-  'OBS_PROPERTY_BUTTON' |
-  'OBS_PROPERTY_BITMASK' |
-  'OBS_INPUT_RESOLUTION_LIST';
-
-/**
  * OBS values that frontend application can change
  */
 export declare type TObsValue = number | string | boolean | IFont | TObsStringList;
+
+/** 
+ * OBS bindings don't describe a union of different sub-property
+ * types so we define our own.
+ */
+export declare type TSubPropertyType = 
+  obs.EEditableListType |
+  obs.EPathType         |
+  obs.ETextType         |
+  obs.ENumberType;
+
+export enum ECustomTypes {
+  /* We start at a thousand to avoid collision with obs types */
+  ResolutionInput = 1000
+}
 
 /**
  * common interface for OBS objects properties
@@ -49,7 +42,8 @@ export interface IFormInput<TValueType> {
   enabled?: boolean;
   visible?: boolean;
   masked?: boolean;
-  type?: TObsType;
+  type?: obs.EPropertyType | ECustomTypes;
+  subType?: TSubPropertyType;
 }
 
 export declare type TFormData = (IFormInput<TObsValue> | IListInput<TObsValue>)[];
@@ -141,157 +135,7 @@ function parsePathFilters(filterStr: string): IElectronOpenDialogFilter[] {
   });
 }
 
-/**
- * each option represent one known nodeObs issue
- */
-interface IObsFetchOptions {
-  disabledFields?: string[];
-  valueIsObject?: boolean;
-  boolIsString?: boolean;
-  transformListOptions?: boolean;
-  subParametersGetter?: (propName: string) => Dictionary<any>[];
-  valueGetter?: (propName: string) => any;
-}
-
-export function obsValuesToInputValues(
-  obsProps: Dictionary<any>[],
-  options: IObsFetchOptions = {}
-): TFormData {
-
-  const resultProps: TFormData = [];
-
-  for (const obsProp of obsProps) {
-    let prop = { ...obsProp } as IFormInput<TObsValue>;
-    let valueObject: Dictionary<any>;
-    let obsValue = obsProp.currentValue;
-
-    if (options.valueGetter) {
-      valueObject = options.valueGetter(obsProp.name);
-      obsValue = valueObject;
-    }
-
-    if (options.valueIsObject) {
-      obsValue = obsValue.value;
-    }
-
-    prop.value = obsValue;
-    prop.masked = !!obsProp.masked;
-    prop.enabled = !!obsProp.enabled;
-    prop.visible = !!obsProp.visible;
-
-    if (options.disabledFields && options.disabledFields.includes(prop.name)) {
-      prop.visible = false;
-    }
-
-    if (['OBS_PROPERTY_LIST', 'OBS_INPUT_RESOLUTION_LIST'].includes(obsProp.type)) {
-      const listOptions: any[] = [];
-
-      if (options.transformListOptions) for (const listOption of (obsProp.values || []))  {
-        listOptions.push({
-          value: listOption[Object.keys(listOption)[0]],
-          description: Object.keys(listOption)[0]
-        });
-      }
-
-      if (options.subParametersGetter) {
-        listOptions.push(...options.subParametersGetter(prop.name));
-      }
-
-      for (const listOption of listOptions) {
-        if (listOption.description === void 0) listOption.description = listOption['name'];
-      }
-
-      const needToSetDefaultValue = listOptions.length && prop.value === void 0;
-      if (needToSetDefaultValue) prop.value = listOptions[0].value;
-
-      (<any>prop).options = listOptions;
-
-    } else if (obsProp.type === 'OBS_PROPERTY_BOOL') {
-
-      prop.value = !!prop.value;
-
-    } else if (['OBS_PROPERTY_INT', 'OBS_PROPERTY_FLOAT', 'OBS_PROPERTY_DOUBLE'].includes(obsProp.type)) {
-      prop = {
-        ...prop,
-        value: Number(prop.value),
-        minVal: obsProp.minVal,
-        maxVal: obsProp.maxVal,
-        stepVal: obsProp.stepVal
-      } as INumberInputValue;
-
-      if (obsProp.subType === 'OBS_NUMBER_SLIDER') {
-        prop.type = 'OBS_PROPERTY_SLIDER';
-      }
-    } else if (obsProp.type === 'OBS_PROPERTY_PATH') {
-
-      if (valueObject && valueObject.type === 'OBS_PATH_FILE') {
-        prop = {
-          ...prop,
-          type: 'OBS_PROPERTY_FILE',
-          filters: parsePathFilters(valueObject.filter)
-        } as IPathInputValue;
-      }
-    } else if (obsProp.type === 'OBS_PROPERTY_FONT') {
-      prop.value = valueObject;
-    } else if (obsProp.type === 'OBS_PROPERTY_EDITABLE_LIST') {
-      prop = {
-        ...prop,
-        value: valueObject,
-        filters: parsePathFilters(valueObject.filter),
-        defaultPath: valueObject.default_path
-      } as IEditableListInputValue;
-    }
-
-    resultProps.push(prop);
-  }
-
-  return resultProps;
-}
-
-/**
- * each option represent one known nodeObs issue
- */
-interface IObsSaveOptions {
-  boolToString?: boolean;
-  intToString?: boolean;
-  valueToObject?: boolean;
-  valueToCurrentValue?: boolean;
-}
-
-export function inputValuesToObsValues(
-  props: TFormData,
-  options: IObsSaveOptions = {}
-): Dictionary<any>[] {
-  const obsProps: Dictionary<any>[] = [];
-
-  for (const prop of props) {
-    const obsProp = { ...prop } as Dictionary<any>;
-    obsProps.push(obsProp);
-
-    if (prop.type === 'OBS_PROPERTY_BOOL') {
-      if (options.boolToString) obsProp.currentValue = obsProp.currentValue ? 'true' : 'false';
-    } else if (prop.type === 'OBS_PROPERTY_INT') {
-      if (options.intToString) obsProp.currentValue = String(obsProp.currentValue);
-    }
-
-    if (
-      options.valueToObject &&
-      !['OBS_PROPERTY_FONT', 'OBS_PROPERTY_EDITABLE_LIST', 'OBS_PROPERTY_BUTTON'].includes(prop.type)
-    ) {
-      obsProp.value = { value: obsProp.value };
-    }
-
-    if (options.valueToCurrentValue) {
-      obsProp.currentValue = obsProp.value;
-    }
-  }
-  return obsProps;
-}
-
-
-export function getPropertiesFormData(obsSource: obs.ISource): TFormData {
-
-  setupSourceDefaults(obsSource);
+export function getPropertiesFormData(obsSource: obs.IConfigurable): TFormData {
 
   const formData: TFormData = [];
   const obsProps = obsSource.properties;
@@ -301,42 +145,13 @@ export function getPropertiesFormData(obsSource: obs.ISource): TFormData {
 
   let obsProp = obsProps.first();
   do {
-    let obsType: TObsType;
-
-    switch (obsProp.type) {
-      case obs.EPropertyType.Boolean:
-        obsType = 'OBS_PROPERTY_BOOL'; break;
-      case obs.EPropertyType.Int:
-        obsType = 'OBS_PROPERTY_INT'; break;
-      case obs.EPropertyType.Float:
-        obsType = 'OBS_PROPERTY_FLOAT'; break;
-      case obs.EPropertyType.List:
-        obsType = 'OBS_PROPERTY_LIST'; break;
-      case obs.EPropertyType.Text:
-        obsType = 'OBS_PROPERTY_TEXT'; break;
-      case obs.EPropertyType.Color:
-        obsType = 'OBS_PROPERTY_COLOR'; break;
-      case obs.EPropertyType.Font:
-        obsType = 'OBS_PROPERTY_FONT'; break;
-      case obs.EPropertyType.EditableList:
-        obsType = 'OBS_PROPERTY_EDITABLE_LIST'; break;
-      case obs.EPropertyType.Button:
-        obsType = 'OBS_PROPERTY_BUTTON'; break;
-      case obs.EPropertyType.Path:
-        switch ((obsProp as obs.IPathProperty).details.type) {
-          case obs.EPathType.File: obsType = 'OBS_PROPERTY_FILE'; break;
-          case obs.EPathType.Directory: obsType = 'OBS_PROPERTY_PATH'; break;
-        }
-        break;
-    }
-
     const formItem: IFormInput<TObsValue> = {
       value: obsSettings[obsProp.name],
       name: obsProp.name,
       description: obsProp.description,
       enabled: obsProp.enabled,
       visible: obsProp.visible,
-      type: obsType
+      type: obsProp.type
     };
 
     // handle property details
@@ -345,23 +160,22 @@ export function getPropertiesFormData(obsSource: obs.ISource): TFormData {
       const options: IListOption<any>[] = obsProp.details.items.map(option => {
         return { value: option.value, description: option.name };
       });
-      (formItem as IListInput<TObsValue>).options = options;
+
+      Object.assign(formItem as IListInput<TObsValue>, { options });
     }
 
     if (isNumberProperty(obsProp)) {
       Object.assign(formItem as INumberInputValue, {
+        subType: obsProp.details.type,
         minVal: obsProp.details.min,
         maxVal: obsProp.details.max,
         stepVal: obsProp.details.step
       });
-
-      if (obsProp.details.type === obs.ENumberType.Slider) {
-        formItem.type = 'OBS_PROPERTY_SLIDER';
-      }
     }
 
     if (isEditableListProperty(obsProp)) {
       Object.assign(formItem as IEditableListInputValue, {
+        subType: obsProp.details.type,
         filters: parsePathFilters(obsProp.details.filter),
         defaultPath: obsProp.details.defaultPath
       });
@@ -369,6 +183,7 @@ export function getPropertiesFormData(obsSource: obs.ISource): TFormData {
 
     if (isPathProperty(obsProp)) {
       Object.assign(formItem as IPathInputValue, {
+        subType: obsProp.details.type,
         filters: parsePathFilters(obsProp.details.filter),
         defaultPath: obsProp.details.defaultPath
       });
@@ -376,6 +191,7 @@ export function getPropertiesFormData(obsSource: obs.ISource): TFormData {
 
     if (isTextProperty(obsProp)) {
       Object.assign(formItem as ITextInputValue, {
+        subType: obsProp.details.type,
         multiline: obsProp.details.type === obs.ETextType.Multiline
       });
     }
@@ -391,13 +207,13 @@ export function getPropertiesFormData(obsSource: obs.ISource): TFormData {
 }
 
 
-export function setPropertiesFormData(obsSource: obs.ISource, form: TFormData) {
+export function setPropertiesFormData(obsSource: obs.IConfigurable, form: TFormData) {
   const buttons: IFormInput<boolean>[] = [];
   const formInputs: IFormInput<TObsValue>[] = [];
   const properties = obsSource.properties;
 
   form.forEach(item => {
-    if (item.type === 'OBS_PROPERTY_BUTTON') {
+    if (item.type === obs.EPropertyType.Button) {
       buttons.push(item as IFormInput<boolean>);
     } else {
       formInputs.push(item);
@@ -408,7 +224,7 @@ export function setPropertiesFormData(obsSource: obs.ISource, form: TFormData) {
   formInputs.forEach(property => {
     settings[property.name] = property.value;
 
-    if (property.type === 'OBS_PROPERTY_FONT') {
+    if (property.type === obs.EPropertyType.Font) {
       settings['custom_font'] = (property.value as IFont).path;
       delete settings[property.name]['path'];
     }
@@ -424,7 +240,7 @@ export function setPropertiesFormData(obsSource: obs.ISource, form: TFormData) {
 }
 
 
-export function setupSourceDefaults(obsSource: obs.ISource) {
+export function setupSourceDefaults(obsSource: obs.IConfigurable) {
   const propSettings = obsSource.settings;
   const defaultSettings = {};
   const properties = obsSource.properties;

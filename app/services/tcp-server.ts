@@ -1,8 +1,7 @@
 import WritableStream = NodeJS.WritableStream;
 import { ServicesManager } from '../services-manager';
 import { PersistentStatefulService } from './persistent-stateful-service';
-import { IFormInput } from '../components/shared/forms/Input';
-import { ISettingsSubCategory } from './settings';
+import { IFormInput, TFormData } from '../components/shared/forms/Input';
 import { mutation } from './stateful-service';
 import { Inject } from '../util/injector';
 import {
@@ -12,6 +11,11 @@ import {
   IJsonRpcRequest,
   IJsonRpcResponse
 } from 'services/jsonrpc';
+import { 
+  EPropertyType, 
+  ENumberType,
+  ETextType
+ } from 'services/obs-api';
 
 const net = require('net');
 
@@ -58,7 +62,7 @@ export interface ITcpServersSettings {
 }
 
 export interface ITcpServerServiceAPI {
-  getApiSettingsFormData(): ISettingsSubCategory[];
+  getApiSettingsFormData(): TFormData;
   setSettings(settings: Partial<ITcpServersSettings>): void;
   getDefaultSettings(): ITcpServersSettings;
   listen(): void;
@@ -124,99 +128,79 @@ export class TcpServerService extends PersistentStatefulService<ITcpServersSetti
     this.SET_SETTINGS(settings);
   }
 
-  getApiSettingsFormData(): ISettingsSubCategory[] {
+  getApiSettingsFormData(): TFormData {
     const settings = this.state;
     return [
-      {
-        nameSubCategory: 'TCP',
-        codeSubCategory: 'tcp',
-        parameters: [
-          <IFormInput<boolean>> {
-            value: settings.tcp.enabled,
-            name: 'enabled',
-            description: 'Enabled',
-            type: 'OBS_PROPERTY_BOOL',
-            visible: true,
-            enabled: true,
-          },
-
-          <IFormInput<boolean>> {
-            value: settings.tcp.allowRemote,
-            name: 'allowRemote',
-            description: 'Allow Remote Connections',
-            type: 'OBS_PROPERTY_BOOL',
-            visible: true,
-            enabled: settings.tcp.enabled,
-          },
-
-          <IFormInput<number>> {
-            value: settings.tcp.port,
-            name: 'port',
-            description: 'Port',
-            type: 'OBS_PROPERTY_INT',
-            minVal: 0,
-            maxVal: 65535,
-            visible: true,
-            enabled: settings.tcp.enabled,
-          }
-        ]
+      <IFormInput<boolean>> {
+        value: settings.tcp.enabled,
+        name: 'enabled',
+        description: 'Enabled',
+        type: EPropertyType.Boolean,
+        visible: true,
+        enabled: true,
       },
-      {
-        nameSubCategory: 'Named Pipe',
-        codeSubCategory: 'namedPipe',
-        parameters: [
-          <IFormInput<boolean>> {
-            value: settings.namedPipe.enabled,
-            name: 'enabled',
-            description: 'Enabled',
-            type: 'OBS_PROPERTY_BOOL',
-            visible: true,
-            enabled: true,
-          },
-
-          <IFormInput<string>> {
-            value: settings.namedPipe.pipeName,
-            name: 'pipeName',
-            description: 'Pipe Name',
-            type: 'OBS_PROPERTY_TEXT',
-            visible: true,
-            enabled: settings.namedPipe.enabled,
-          }
-        ]
+      <IFormInput<boolean>> {
+        value: settings.tcp.allowRemote,
+        name: 'allowRemote',
+        description: 'Allow Remote Connections',
+        type: EPropertyType.Boolean,
+        visible: true,
+        enabled: settings.tcp.enabled,
       },
-      {
-        nameSubCategory: 'Websockets',
-        codeSubCategory: 'websockets',
-        parameters: [
-          <IFormInput<boolean>> {
-            value: settings.websockets.enabled,
-            name: 'enabled',
-            description: 'Enabled',
-            type: 'OBS_PROPERTY_BOOL',
-            visible: true,
-            enabled: true,
-          },
-
-          <IFormInput<boolean>> {
-            value: settings.websockets.allowRemote,
-            name: 'allowRemote',
-            description: 'Allow Remote Connections',
-            type: 'OBS_PROPERTY_BOOL',
-            visible: true,
-            enabled: settings.websockets.enabled,
-          },
-
-          <IFormInput<number>> {
-            value: settings.websockets.port,
-            name: 'port',
-            description: 'Port',
-            type: 'OBS_PROPERTY_INT',
-            minVal: 0,
-            maxVal: 65535,
-            visible: true,
-            enabled: settings.websockets.enabled,
-          }
-        ]
+      <IFormInput<number>> {
+        value: settings.tcp.port,
+        name: 'port',
+        description: 'Port',
+        type: EPropertyType.Int,
+        subType: ENumberType.Scroller,
+        minVal: 0,
+        maxVal: 65535,
+        visible: true,
+        enabled: settings.tcp.enabled,
+      },
+      <IFormInput<boolean>> {
+        value: settings.namedPipe.enabled,
+        name: 'enabled',
+        description: 'Enabled',
+        type: EPropertyType.Boolean,
+        visible: true,
+        enabled: true,
+      },
+      <IFormInput<string>> {
+        value: settings.namedPipe.pipeName,
+        name: 'pipeName',
+        description: 'Pipe Name',
+        type: EPropertyType.Text,
+        subType: ETextType.Default,
+        visible: true,
+        enabled: settings.namedPipe.enabled,
+      },
+      <IFormInput<boolean>> {
+        value: settings.websockets.enabled,
+        name: 'enabled',
+        description: 'Enabled',
+        type: EPropertyType.Boolean,
+        visible: true,
+        enabled: true,
+      },
+      <IFormInput<boolean>> {
+        value: settings.websockets.allowRemote,
+        name: 'allowRemote',
+        description: 'Allow Remote Connections',
+        type: EPropertyType.Boolean,
+        visible: true,
+        enabled: settings.websockets.enabled,
+      },
+      <IFormInput<number>> {
+        value: settings.websockets.port,
+        name: 'port',
+        description: 'Port',
+        type: EPropertyType.Int,
+        subType: ENumberType.Scroller,
+        minVal: 0,
+        maxVal: 65535,
+        visible: true,
+        enabled: settings.websockets.enabled,
       }
     ];
   }

@@ -6,7 +6,6 @@ import NavMenu from '../shared/NavMenu.vue';
 import NavItem from '../shared/NavItem.vue';
 import GenericFormGroups from '../shared/forms/GenericFormGroups.vue';
 import { WindowsService } from '../../services/windows';
-import { ISettingsServiceApi, ISettingsSubCategory } from '../../services/settings';
 import windowMixin from '../mixins/window';
 import ExtraSettings from '../ExtraSettings.vue';
 import ApiSettings from '../ApiSettings.vue';
@@ -15,6 +14,10 @@ import OverlaySettings from 'components/OverlaySettings.vue';
 import NotificationsSettings from 'components/NotificationsSettings.vue';
 import AppearanceSettings from 'components/AppearanceSettings.vue';
 import ExperimentalSettings from 'components/ExperimentalSettings.vue';
+import RtmpOutputSettings from 'components/RtmpOutputSettings.vue';
+import StreamSettings from 'components/StreamSettings.vue';
+import AudioSettings from 'components/AudioSettings.vue';
+import VideoSettings from 'components/VideoSettings.vue';
 
 @Component({
   components: {
@@ -28,19 +31,18 @@ import ExperimentalSettings from 'components/ExperimentalSettings.vue';
     OverlaySettings,
     NotificationsSettings,
     AppearanceSettings,
-    ExperimentalSettings
+    ExperimentalSettings,
+    RtmpOutputSettings,
+    StreamSettings,
+    AudioSettings,
+    VideoSettings
   },
   mixins: [windowMixin]
 })
-export default class SceneTransitions extends Vue {
+export default class Settings extends Vue {
 
-  @Inject()
-  settingsService: ISettingsServiceApi;
+  categoryName = "General";
 
-  @Inject()
-  windowsService: WindowsService;
-
-  settingsData = this.settingsService.getSettingsFormData(this.categoryName);
   icons: Dictionary<string> = {
     General: 'th-large',
     Stream: 'globe',
@@ -56,30 +58,29 @@ export default class SceneTransitions extends Vue {
     Experimental: 'flask'
   };
 
-  get categoryName() {
-    return this.windowsService.state.child.queryParams.categoryName || 'General';
-  }
-
-  set categoryName(name) {
-    this.settingsService.showSettings(name);
-  }
+  @Inject()
+  windowsService: WindowsService;
 
   get categoryNames() {
-    return this.settingsService.getCategories();
-  }
-
-  save(settingsData: ISettingsSubCategory[]) {
-    this.settingsService.setSettings(this.categoryName, settingsData);
-    this.settingsData = this.settingsService.getSettingsFormData(this.categoryName);
+    return [
+      'General',
+      'Stream',
+      'Output',
+      'Video',
+      'Audio',
+      'Hotkeys',
+      'Advanced',
+      'API',
+      'Overlays',
+      'Notifications',
+      'Appearance',
+      'Experimental'
+    ];
   }
 
   done() {
     this.windowsService.closeChildWindow();
   }
 
-  @Watch('categoryName')
-  onCategoryNameChangedHandler(categoryName: string) {
-    this.settingsData = this.settingsService.getSettingsFormData(categoryName);
-  }
-
+  
 }

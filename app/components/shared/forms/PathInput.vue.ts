@@ -1,13 +1,12 @@
 import Vue from 'vue';
 import { Component, Prop } from 'vue-property-decorator';
-import { IPathInputValue, TObsType, Input } from './Input';
+import { IPathInputValue, Input } from './Input';
 import electron from 'electron';
 import OpenDialogOptions = Electron.OpenDialogOptions;
+import { EPropertyType, EPathType } from 'services/obs-api';
 
 @Component
 class PathInput extends Input<IPathInputValue> {
-
-  static obsType: TObsType[];
 
   @Prop()
   value: IPathInputValue;
@@ -25,11 +24,11 @@ class PathInput extends Input<IPathInputValue> {
       properties: []
     };
 
-    if (this.value.type === 'OBS_PROPERTY_FILE') {
+    if (this.value.subType === EPathType.File) {
       options.properties.push('openFile');
     }
 
-    if (this.value.type === 'OBS_PROPERTY_PATH') {
+    if (this.value.subType === EPathType.Directory) {
       options.properties.push('openDirectory');
     }
 
@@ -47,7 +46,5 @@ class PathInput extends Input<IPathInputValue> {
   }
 
 }
-
-PathInput.obsType = ['OBS_PROPERTY_PATH', 'OBS_PROPERTY_FILE'];
 
 export default PathInput;

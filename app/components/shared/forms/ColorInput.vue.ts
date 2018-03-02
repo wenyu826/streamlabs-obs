@@ -1,7 +1,7 @@
 import _ from 'lodash';
 import { Component, Watch, Prop } from 'vue-property-decorator';
 import { debounce } from 'lodash-decorators';
-import { TObsType, IFormInput, Input } from './Input';
+import { IFormInput, Input } from './Input';
 import Utils from './../../../services/utils';
 import VueColor from 'vue-color';
 
@@ -14,8 +14,6 @@ interface IColor {
   components: { ColorPicker: VueColor.Sketch }
 })
 class ColorInput extends Input<IFormInput<number>> {
-
-  static obsType: TObsType;
 
   @Prop()
   value: IFormInput<number>;
@@ -96,7 +94,5 @@ class ColorInput extends Input<IFormInput<number>> {
   }
 
 }
-
-ColorInput.obsType = 'OBS_PROPERTY_COLOR';
 
 export default ColorInput;
