@@ -69,7 +69,8 @@ export class StreamingService extends StatefulService<IStreamingServiceState> im
     this.state.streamOk = streamOk;
   }
 
-  delayTimeout: number = null;
+  goLiveTimeout: number = null;
+  endLiveTimeout: number = null;
 
   streamingStateChange = new Subject<IStreamingServiceState>();
 
@@ -126,7 +127,7 @@ export class StreamingService extends StatefulService<IStreamingServiceState> im
     this.SET_STREAM_STATUS(null);
 
     if (this.state.usingDelay) {
-      this.delayTimeout = window.setTimeout(() => {
+      this.endLiveTimeout = window.setTimeout(() => {
         this.SET_IS_LIVE(false);
       }, this.delaySeconds * 1000);
     } else {
@@ -147,7 +148,8 @@ export class StreamingService extends StatefulService<IStreamingServiceState> im
     if (!this.delaySecondsRemaining) return;
 
     nodeObs.OBS_service_stopStreaming(true);
-    if (this.delayTimeout) clearTimeout(this.delayTimeout);
+    if (this.goLiveTimeout) clearTimeout(this.goLiveTimeout);
+    if (this.endLiveTimeout) clearTimeout(this.endLiveTimeout);
     this.DISCARD_STREAM_DELAY();
   }
 
