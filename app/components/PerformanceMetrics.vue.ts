@@ -11,6 +11,7 @@ export default class PerformanceMetrics extends Vue {
   @Inject() performanceService: PerformanceService;
 
   get cpuPercent() {
+    console.log(this.performanceService.state.CPU.toFixed(1));
     return this.performanceService.state.CPU.toFixed(1);
   }
 

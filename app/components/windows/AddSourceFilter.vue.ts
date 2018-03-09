@@ -34,6 +34,7 @@ export default class AddSourceFilter extends Vue {
     const name = this.form.name.value;
     this.error = this.validateName(name);
     if (this.error) return;
+    console.log('done filter', name);
 
     this.filtersService.add(
       this.sourceId,

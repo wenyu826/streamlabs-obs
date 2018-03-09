@@ -14,6 +14,8 @@
           <i class="fa fa-arrow-right" aria-hidden="true"></i> Hide Test Widgets
         </a>
         <div class="button-container">
+          <button class="button button--trans" @click="toggleFacemask">Toggle Facemask
+          </button>
           <button
             class="button button--trans"
             v-for="tester in widgetTesters"

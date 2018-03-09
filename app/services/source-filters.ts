@@ -168,6 +168,7 @@ export class SourceFiltersService extends Service {
 
 
   setVisibility(sourceId: string, filterName: string, visible: boolean) {
+    console.log('set visibility', sourceId);
     this.getObsFilter(sourceId, filterName).enabled = visible;
   }
 
