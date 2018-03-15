@@ -57,6 +57,7 @@ export class StreamingService extends StatefulService<IStreamingServiceState>
     this.obsApiService.nodeObs.OBS_service_connectOutputSignals(
       (info: IOBSOutputSignalInfo) => {
         this.handleOBSOutputSignal(info);
+        console.log(info);
       }
     );
   }
