@@ -46,10 +46,6 @@ export class ObsApiService extends Service {
   nodeObs = nodeObs;
 
 
-  isObsInstalled() {
-    return nodeObs.OBS_API_isOBS_installed();
-  }
-
   createDisplay(key: string) {
     nodeObs.OBS_content_createDisplay(
       remote.getCurrentWindow().getNativeWindowHandle(),
@@ -81,11 +77,4 @@ export class ObsApiService extends Service {
     nodeObs.OBS_content_selectSource(x, y);
   }
 
-  getObsProfiles(): string[] {
-    return nodeObs.OBS_API_getOBS_existingProfiles();
-  }
-
-  getObsSceneCollections(): string[] {
-    return nodeObs.OBS_API_getOBS_existingSceneCollections();
-  }
 }

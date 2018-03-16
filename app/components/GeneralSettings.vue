@@ -28,7 +28,24 @@
       Run Auto Optimizer
     </button>
   </div>
+
+  <!-- Source Alignment/Snapping Settings -->
+  <div class="section">
+    <div class="section-title--dropdown">
+      <h4 class="section-title" @click="snappingCollapsed = !snappingCollapsed">
+        <i class="fa fa-plus"  v-show="snappingCollapsed"></i>
+        <i class="fa fa-minus" v-show="!snappingCollapsed"></i>
+        Source Alignment Snapping
+      </h4>
+    </div>
+    <div class="section-contect section-content--dropdown" v-if="!snappingCollapsed">
+      <BoolInput v-model="snappingEnabled" />
+      <IntInput v-model="snappingSensitivity" />
+      <BoolInput v-model="snappingEdges" />
+      <BoolInput v-model="snappingSources" />
+    </div>
+  </div>
 </div>
 </template>
 
-<script lang="ts" src="./ExtraSettings.vue.ts"></script>
+<script lang="ts" src="./GeneralSettings.vue.ts"></script>

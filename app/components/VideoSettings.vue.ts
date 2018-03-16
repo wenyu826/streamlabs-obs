@@ -6,18 +6,7 @@ import IntInput from './shared/forms/IntInput.vue';
 import ResolutionInput from './shared/forms/ResolutionInput.vue';
 import { IListInput, IListOption, INumberInputValue } from './shared/forms/Input';
 import { EScaleType, VideoFactory } from 'services/obs-api';
-import { SettingsStorageService } from 'services/settings';
-
-interface IResolution {
-    width: number;
-    height: number;
-}
-
-enum EFPSType {
-    Common,
-    Integer,
-    Fraction
-}
+import { SettingsStorageService, EFPSType } from 'services/settings';
 
 @Component({
     components: { ListInput, IntInput, ResolutionInput }
@@ -29,47 +18,9 @@ export default class VideoSettings extends Vue {
 
     fpsType = this.settingsStorageService.state.Settings.Video.FPSType;
 
-    resetVideo(){
-        const VideoSettings = this.settingsStorageService.state.Settings.Video;
-        const baseRes = this.parseResolutionString(VideoSettings.BaseResolution);
-        const outputRes = this.parseResolutionString(VideoSettings.OutputResolution);
-        let fpsNum = 30;
-        let fpsDen = 1;
-
-        switch (this.fpsType) {
-            case EFPSType.Common:
-                const idx = VideoSettings.FPSCommon;
-                const values = this.fpsCommonOptionValues[idx];
-                fpsNum = values.num;
-                fpsDen = values.den;
-                break;
-            case EFPSType.Integer:
-                fpsNum = VideoSettings.FPSInt;
-                break;
-            case EFPSType.Fraction:
-                fpsNum = VideoSettings.FPSNum;
-                fpsDen = VideoSettings.FPSDen;
-                break;
-        }
-
-        VideoFactory.reset({
-            graphicsModule: 'libobs-d3d11',
-            fpsNum: fpsNum,
-            fpsDen: fpsDen,
-            baseWidth: baseRes.width,
-            baseHeight: baseRes.height,
-            outputWidth: outputRes.width,
-            outputHeight: outputRes.height,
-            outputFormat: VideoSettings.ColorFormat,
-            adapter: 0,
-            gpuConversion: true,
-            colorspace: VideoSettings.ColorSpace,
-            range: VideoSettings.ColorRange,
-            scaleType: VideoSettings.DownscaleFilter
-        });
-    }
-
     private get baseResolutionOptions(): IListOption<string>[] {
+        /* FIXME TODO Need to add variable resolutions */
+
         return [
             {
                 description: '1920x1080',
@@ -80,18 +31,6 @@ export default class VideoSettings extends Vue {
                 value: '1280x720'
             }
         ];
-    }
-
-    /* This isn't quite as failsafe as what's in the resolution
-     * input component itself as it's already been parsed once
-     * It's practical to assume it's always going to have the format
-     * of `1234x1234`. */
-    private parseResolutionString(res: string): IResolution {
-        const match = res.match(/(\d+)x(\d+)/);
-        return {
-            width: parseInt(match[1]),
-            height: parseInt(match[2])
-        };
     }
 
     baseResolutionFormData = {
@@ -105,7 +44,7 @@ export default class VideoSettings extends Vue {
 
     private createOutputResolutionFormData = (): IListInput<string> => {
         const resString = this.settingsStorageService.state.Settings.Video.BaseResolution;
-        const baseRes = this.parseResolutionString(resString);
+        const baseRes = this.settingsStorageService.parseResolutionString(resString);
         let options: IListOption<string>[] = []; 
 
         const outputResolutionRatios = [
@@ -190,19 +129,6 @@ export default class VideoSettings extends Vue {
         options: this.fpsTypeOptions
     }
 
-    /* This is a map to the values from 
-     * fpsCommonOptions */
-    private fpsCommonOptionValues = [
-        { num: 10, den: 1 },
-        { num: 20, den: 1 },
-        { num: 24000, den: 1001 },
-        { num: 30000, den: 1001 },
-        { num: 30, den: 1 },
-        { num: 48, den: 1 },
-        { num: 60000, den: 1001 },
-        { num: 60, den: 1 }
-    ];
-
     private fpsCommonOptions: IListOption<number>[] = [
         { description: '10', value: 0 },
         { description: '20', value: 1 },
@@ -265,7 +191,7 @@ export default class VideoSettings extends Vue {
         });
 
         this.outputResolutionFormData = this.createOutputResolutionFormData();
-        this.resetVideo();
+        this.settingsStorageService.resetVideo();
     }
 
     inputOutputResolution(formData: IListInput<string>) {
@@ -276,7 +202,7 @@ export default class VideoSettings extends Vue {
             }
         });
 
-        this.resetVideo();
+        this.settingsStorageService.resetVideo();
     }
 
     inputDownscaleFilter(formData: IListInput<EScaleType>) {
@@ -287,7 +213,7 @@ export default class VideoSettings extends Vue {
             }
         });
 
-        this.resetVideo();
+        this.settingsStorageService.resetVideo();
     }
 
     inputFpsType(formData: IListInput<number>) {
@@ -299,7 +225,7 @@ export default class VideoSettings extends Vue {
         });
 
         this.fpsType = formData.value;
-        this.resetVideo();
+        this.settingsStorageService.resetVideo();
     }
 
     inputFpsCommon(formData: IListInput<number>) {
@@ -310,7 +236,7 @@ export default class VideoSettings extends Vue {
             }
         });
 
-        this.resetVideo();
+        this.settingsStorageService.resetVideo();
     }
 
     inputFpsInteger(formData: INumberInputValue) {
@@ -321,7 +247,7 @@ export default class VideoSettings extends Vue {
             }
         });
 
-        this.resetVideo();
+        this.settingsStorageService.resetVideo();
     }
 
     inputFpsFractionNum(formData: INumberInputValue) {
@@ -332,7 +258,7 @@ export default class VideoSettings extends Vue {
             }
         });
 
-        this.resetVideo();
+        this.settingsStorageService.resetVideo();
     }
 
     inputFpsFractionDen(formData: INumberInputValue) {
@@ -343,6 +269,6 @@ export default class VideoSettings extends Vue {
             }
         });
 
-        this.resetVideo();
+        this.settingsStorageService.resetVideo();
     }
 }

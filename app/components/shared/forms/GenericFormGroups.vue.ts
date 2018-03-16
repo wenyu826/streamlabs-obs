@@ -1,5 +1,6 @@
 import Vue from 'vue';
 import GenericForm from './GenericForm.vue';
+import { TFormData } from './Input';
 import { Component, Prop } from 'vue-property-decorator';
 
 @Component({
@@ -8,7 +9,7 @@ import { Component, Prop } from 'vue-property-decorator';
 export default class GenericFormGroups extends Vue {
 
   @Prop()
-  value: any[];
+  value: TFormData;
 
   collapsedGroups: Dictionary<boolean> = {};
 

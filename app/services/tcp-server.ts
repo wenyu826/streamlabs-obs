@@ -1,6 +1,6 @@
 import WritableStream = NodeJS.WritableStream;
 import { ServicesManager } from '../services-manager';
-import { PersistentStatefulService } from './persistent-stateful-service';
+import { Service } from './service';
 import { IFormInput, TFormData } from '../components/shared/forms/Input';
 import { mutation } from './stateful-service';
 import { Inject } from '../util/injector';
@@ -11,11 +11,8 @@ import {
   IJsonRpcRequest,
   IJsonRpcResponse
 } from 'services/jsonrpc';
-import { 
-  EPropertyType, 
-  ENumberType,
-  ETextType
- } from 'services/obs-api';
+
+import { SettingsStorageService } from './settings';
 
 const net = require('net');
 
@@ -43,53 +40,17 @@ interface IServer {
   close(): void;
 }
 
-
-export interface ITcpServersSettings {
-  tcp: {
-    enabled: boolean;
-    port: number;
-    allowRemote: boolean;
-  };
-  namedPipe: {
-    enabled: boolean;
-    pipeName: string;
-  };
-  websockets: {
-    enabled: boolean;
-    port: number;
-    allowRemote: boolean;
-  };
-}
-
 export interface ITcpServerServiceAPI {
-  getApiSettingsFormData(): TFormData;
-  setSettings(settings: Partial<ITcpServersSettings>): void;
-  getDefaultSettings(): ITcpServersSettings;
   listen(): void;
   stopListening(): void;
 }
 
 
-export class TcpServerService extends PersistentStatefulService<ITcpServersSettings> implements ITcpServerServiceAPI {
-
-  static defaultState: ITcpServersSettings = {
-    tcp: {
-      enabled: false,
-      port: 59651,
-      allowRemote: false
-    },
-    namedPipe: {
-      enabled: true,
-      pipeName: 'slobs'
-    },
-    websockets: {
-      enabled: false,
-      port: 59650,
-      allowRemote: false
-    }
-  };
+export class TcpServerService extends Service implements ITcpServerServiceAPI {
 
   @Inject() private jsonrpcService: JsonrpcService;
+  @Inject() settingsStorageService: SettingsStorageService;
+
   private servicesManager: ServicesManager = ServicesManager.instance;
   private clients: Dictionary<IClient> = {};
   private nextClientId = 1;
@@ -98,111 +59,21 @@ export class TcpServerService extends PersistentStatefulService<ITcpServersSetti
   // enable to debug
   private enableLogs = false;
 
-
   init() {
     super.init();
     this.servicesManager.serviceEvent.subscribe(event => this.onServiceEventHandler(event));
   }
 
-
   listen() {
-    if (this.state.namedPipe.enabled) this.listenConnections(this.createNamedPipeServer());
-    if (this.state.tcp.enabled) this.listenConnections(this.createTcpServer());
-    if (this.state.websockets.enabled) this.listenConnections(this.createWebsoketsServer());
+    const Settings = this.settingsStorageService.state.Settings;
+    if (Settings.NamedPipe.Enabled) this.listenConnections(this.createNamedPipeServer());
+    if (Settings.TCP.Enabled) this.listenConnections(this.createTcpServer());
+    if (Settings.WebSockets.Enabled) this.listenConnections(this.createWebSocketsServer());
   }
-
-
 
   stopListening() {
     this.servers.forEach(server => server.close());
     Object.keys(this.clients).forEach(clientId => this.disconnectClient(Number(clientId)));
-  }
-
-
-  getDefaultSettings(): ITcpServersSettings {
-    return TcpServerService.defaultState;
-  }
-
-
-  setSettings(settings: Partial<ITcpServersSettings>) {
-    this.SET_SETTINGS(settings);
-  }
-
-  getApiSettingsFormData(): TFormData {
-    const settings = this.state;
-    return [
-      <IFormInput<boolean>> {
-        value: settings.tcp.enabled,
-        name: 'enabled',
-        description: 'Enabled',
-        type: EPropertyType.Boolean,
-        visible: true,
-        enabled: true,
-      },
-      <IFormInput<boolean>> {
-        value: settings.tcp.allowRemote,
-        name: 'allowRemote',
-        description: 'Allow Remote Connections',
-        type: EPropertyType.Boolean,
-        visible: true,
-        enabled: settings.tcp.enabled,
-      },
-      <IFormInput<number>> {
-        value: settings.tcp.port,
-        name: 'port',
-        description: 'Port',
-        type: EPropertyType.Int,
-        subType: ENumberType.Scroller,
-        minVal: 0,
-        maxVal: 65535,
-        visible: true,
-        enabled: settings.tcp.enabled,
-      },
-      <IFormInput<boolean>> {
-        value: settings.namedPipe.enabled,
-        name: 'enabled',
-        description: 'Enabled',
-        type: EPropertyType.Boolean,
-        visible: true,
-        enabled: true,
-      },
-      <IFormInput<string>> {
-        value: settings.namedPipe.pipeName,
-        name: 'pipeName',
-        description: 'Pipe Name',
-        type: EPropertyType.Text,
-        subType: ETextType.Default,
-        visible: true,
-        enabled: settings.namedPipe.enabled,
-      },
-      <IFormInput<boolean>> {
-        value: settings.websockets.enabled,
-        name: 'enabled',
-        description: 'Enabled',
-        type: EPropertyType.Boolean,
-        visible: true,
-        enabled: true,
-      },
-      <IFormInput<boolean>> {
-        value: settings.websockets.allowRemote,
-        name: 'allowRemote',
-        description: 'Allow Remote Connections',
-        type: EPropertyType.Boolean,
-        visible: true,
-        enabled: settings.websockets.enabled,
-      },
-      <IFormInput<number>> {
-        value: settings.websockets.port,
-        name: 'port',
-        description: 'Port',
-        type: EPropertyType.Int,
-        subType: ENumberType.Scroller,
-        minVal: 0,
-        maxVal: 65535,
-        visible: true,
-        enabled: settings.websockets.enabled,
-      }
-    ];
   }
 
   private listenConnections(server: IServer) {
@@ -217,9 +88,10 @@ export class TcpServerService extends PersistentStatefulService<ITcpServersSetti
 
 
   private createNamedPipeServer(): IServer {
-    const settings = this.state.namedPipe;
+    console.log('Creating named pipe');
+    const settings = this.settingsStorageService.state.Settings;
     const server = net.createServer();
-    server.listen('\\\\.\\pipe\\' + settings.pipeName);
+    server.listen('\\\\.\\pipe\\' + settings.NamedPipe.PipeName);
     return {
       nativeServer: server,
       close() {
@@ -230,9 +102,10 @@ export class TcpServerService extends PersistentStatefulService<ITcpServersSetti
 
 
   private createTcpServer(): IServer {
+    console.log('Creating tcp server');
     const server = net.createServer();
-    const settings = this.state.tcp;
-    server.listen(settings.port, settings.allowRemote ? WILDCARD_HOST_NAME : LOCAL_HOST_NAME);
+    const settings = this.settingsStorageService.state.Settings.TCP;
+    server.listen(settings.Port, settings.AllowRemote ? WILDCARD_HOST_NAME : LOCAL_HOST_NAME);
     return {
       nativeServer: server,
       close() {
@@ -242,14 +115,15 @@ export class TcpServerService extends PersistentStatefulService<ITcpServersSetti
   }
 
 
-  private createWebsoketsServer(): IServer {
-    const settings = this.state.websockets;
+  private createWebSocketsServer(): IServer {
+    console.log('Creating web socket server');
+    const settings = this.settingsStorageService.state.Settings.WebSockets;
     const http = require('http');
     const sockjs = require('sockjs');
     const websocketsServer = sockjs.createServer();
     const httpServer = http.createServer();
     websocketsServer.installHandlers(httpServer, { prefix:'/api' });
-    httpServer.listen(settings.port, settings.allowRemote ? WILDCARD_HOST_NAME : LOCAL_HOST_NAME);
+    httpServer.listen(settings.Port, settings.AllowRemote ? WILDCARD_HOST_NAME : LOCAL_HOST_NAME);
     return {
       nativeServer: websocketsServer,
       close() {
@@ -399,10 +273,5 @@ export class TcpServerService extends PersistentStatefulService<ITcpServersSetti
   private log(...messages: any[]) {
     if (!this.enableLogs) return;
     console.log(...messages);
-  }
-
-  @mutation()
-  private SET_SETTINGS(patch: Partial<ITcpServersSettings>) {
-    this.state = { ...this.state, ...patch };
   }
 }

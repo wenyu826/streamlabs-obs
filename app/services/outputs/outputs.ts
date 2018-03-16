@@ -7,6 +7,7 @@ import { ProviderService } from '../providers';
 import { Inject } from '../../util/injector';
 import { PropertiesManager } from '../sources/properties-managers/properties-manager';
 import { DefaultManager } from '../sources/properties-managers/default-manager';
+import { TFormData } from 'components/shared/forms/Input';
 import * as obs from '../obs-api';
 
 import PouchDB from 'pouchdb-core';
@@ -61,7 +62,9 @@ export class OutputService extends StatefulService<TOutputServiceState> {
       settings: output.settings,
       audioEncoder: output.audioEncoder,
       videoEncoder: output.videoEncoder,
-      provider: output.provider
+      provider: output.provider,
+      delay:    output.delay,
+      delayFlags: output.delayFlags
     };
   }
 
@@ -70,8 +73,6 @@ export class OutputService extends StatefulService<TOutputServiceState> {
     const output = this.state[uniqueId];
 
     const change = this.buildChange(uniqueId, output);
-
-    console.log(change);
 
     if (queue.push(change) !== 1) {
       return;
@@ -96,8 +97,6 @@ export class OutputService extends StatefulService<TOutputServiceState> {
     for (let i = 0; i < result.total_rows; ++i) {
       const entry = result.rows[i].doc;
 
-      console.log(entry);
-
       const output: FOutput = {
         revision: entry._rev,
         type: entry.type,
@@ -105,6 +104,8 @@ export class OutputService extends StatefulService<TOutputServiceState> {
         audioEncoder: entry.audioEncoder,
         videoEncoder: entry.videoEncoder,
         provider: entry.provider,
+        delay: entry.delay,
+        delayFlags: entry.delayFlags,
         flags: 0,
         starting: false,
         stopping: false,
@@ -115,7 +116,32 @@ export class OutputService extends StatefulService<TOutputServiceState> {
       this.ADD_OUTPUT(entry._id, output);
       FOutput.init(output.type, entry._id, output.settings);
 
-      this.propManagers[entry._id] = 
+      /* To prevent database changes, set encoders/providers directly */
+      /* Note that some outputs don't require encoders or providers,
+       * we need to make sure that we stored one before attempting to
+       * assign null, as that will cause a TypeError exception */
+
+      const obsOutput = obs.OutputFactory.fromName(entry._id);
+
+      if (entry.audioEncoder) {
+        const obsAudioEncoder = obs.AudioEncoderFactory.fromName(entry.audioEncoder);
+        /* FIXME TODO We need to take into account track here */
+        obsOutput.setAudioEncoder(obsAudioEncoder, 0);
+      }
+
+      if (entry.videoEncoder) {
+        const obsVideoEncoder = obs.VideoEncoderFactory.fromName(entry.videoEncoder);
+        obsOutput.setVideoEncoder(obsVideoEncoder);
+      }
+
+      if (entry.provider) {
+        const obsProvider = obs.ServiceFactory.fromName(entry.provider);
+        obsOutput.service = obsProvider;
+      }
+
+      obsOutput.setDelay(entry.delay, entry.delayFlags);
+
+      this.propManagers[entry._id] =
         new DefaultManager(obs.OutputFactory.fromName(entry._id), {});
 
       this.putQueues[entry._id] = [];
@@ -150,6 +176,11 @@ export class OutputService extends StatefulService<TOutputServiceState> {
   }
 
   @mutation()
+  private UPDATE_SETTINGS(uniqueId: string, settings: object) {
+    Vue.set(this.state[uniqueId], 'settings', settings);
+  }
+
+  @mutation()
   private UPDATE_ENCODERS(
     uniqueId: string,
     audioEncoderId: string,
@@ -159,6 +190,16 @@ export class OutputService extends StatefulService<TOutputServiceState> {
 
     fOutput.audioEncoder = audioEncoderId;
     fOutput.videoEncoder = videoEncoderId;
+  }
+
+  @mutation()
+  private UPDATE_AUDIO_ENCODER(uniqueId: string, encoderId: string) {
+    this.state[uniqueId].audioEncoder = encoderId;
+  }
+
+  @mutation()
+  private UPDATE_VIDEO_ENCODER(uniqueId: string, encoderId: string) {
+    this.state[uniqueId].videoEncoder = encoderId;
   }
 
   @mutation()
@@ -179,6 +220,16 @@ export class OutputService extends StatefulService<TOutputServiceState> {
     fOutput.active = false;
   }
 
+  @mutation()
+  private UPDATE_DELAY(uniqueId: string, delay: number) {
+    this.state[uniqueId].delay = delay;
+  }
+
+  @mutation()
+  private UPDATE_DELAY_FLAG(uniqueId: string, flags: number) {
+    this.state[uniqueId].delayFlags = flags;
+  }
+
   addOutput(uniqueId: string, output: FOutput) {
     const obsOutput = obs.OutputFactory.fromName(uniqueId);
     this.ADD_OUTPUT(uniqueId, output);
@@ -196,10 +247,19 @@ export class OutputService extends StatefulService<TOutputServiceState> {
     output.release();
 
     this.queueDeletion(uniqueId);
+    this.REMOVE_OUTPUT(uniqueId);
   }
 
   startOutput(uniqueId: string) {
     const output = obs.OutputFactory.fromName(uniqueId);
+    const videoEncoder = output.getVideoEncoder();
+    const audioEncoder = output.getAudioEncoder(0);
+
+    /* If we previously reset video, the global context
+     * will be invalid. As a result, just assign the encoders
+     * the current global before we start streaming. */
+    videoEncoder.setVideo(obs.VideoFactory.getGlobal());
+    audioEncoder.setAudio(obs.AudioFactory.getGlobal());
 
     output.start();
     this.START_OUTPUT(uniqueId);
@@ -212,20 +272,23 @@ export class OutputService extends StatefulService<TOutputServiceState> {
     this.STOP_OUTPUT(uniqueId);
   }
 
-  setOutputEncoders(
-    uniqueId: string,
-    audioEncoderId: string,
-    videoEncoderId: string
-  ) {
-    const audioEncoder = obs.AudioEncoderFactory.fromName(audioEncoderId);
-    const videoEncoder = obs.VideoEncoderFactory.fromName(videoEncoderId);
+  setOutputVideoEncoder(uniqueId: string, encoderId: string) {
+    const videoEncoder = obs.VideoEncoderFactory.fromName(encoderId);
     const output = obs.OutputFactory.fromName(uniqueId);
 
-    output.setAudioEncoder(audioEncoder, 0);
     output.setVideoEncoder(videoEncoder);
 
-    this.UPDATE_ENCODERS(uniqueId, audioEncoderId, videoEncoderId);
+    this.UPDATE_VIDEO_ENCODER(uniqueId, encoderId);
+    this.queueChange(uniqueId);
+  }
 
+  setOutputAudioEncoder(uniqueId: string, encoderId: string, track: number) {
+    const audioEncoder = obs.AudioEncoderFactory.fromName(encoderId);
+    const output = obs.OutputFactory.fromName(uniqueId);
+
+    output.setAudioEncoder(audioEncoder, track);
+    
+    this.UPDATE_AUDIO_ENCODER(uniqueId, encoderId);
     this.queueChange(uniqueId);
   }
 
@@ -236,8 +299,15 @@ export class OutputService extends StatefulService<TOutputServiceState> {
     output.service = service;
 
     this.UPDATE_PROVIDER(uniqueId, serviceId);
-
     this.queueChange(uniqueId);
+  }
+
+  getVideoEncoder(uniqueId: string): string {
+    return this.state[uniqueId].videoEncoder;
+  }
+
+  getAudioEncoder(uniqueId: string): string {
+    return this.state[uniqueId].audioEncoder;
   }
 
   getOutputProvider(uniqueId: string): string {
@@ -256,7 +326,63 @@ export class OutputService extends StatefulService<TOutputServiceState> {
     return false;
   }
 
-  /* Output properties are garbage. We don't have 
-   * form data for it since the properties are
-   * pretty much unusable */
+  update(uniqueId: string, patch: object) {
+    const obsOutput = obs.OutputFactory.fromName(uniqueId);
+
+    const settings = obsOutput.settings;
+    const changes = Object.keys(patch);
+
+    for (let i = 0; i < changes.length; ++i) {
+      const changed = changes[i];
+      settings[changed] = patch[changed];
+    }
+
+    obsOutput.update(settings);
+    this.UPDATE_SETTINGS(uniqueId, settings);
+
+    this.queueChange(uniqueId);
+  }
+
+  /* We somewhat wrap over delay since we
+   * can't fetch flags from obs state. We
+   * hold it instead and handle it as if
+   * it were persistent state */
+  setDelay(uniqueId: string, delay: number) {
+    const obsOutput = obs.OutputFactory.fromName(uniqueId);
+    const flags = this.state[uniqueId].delayFlags;
+
+    obsOutput.setDelay(delay, flags);
+    this.UPDATE_DELAY(uniqueId, delay);
+    this.queueChange(uniqueId);
+  }
+
+  getDelay(uniqueId: string): number {
+    return this.state[uniqueId].delay;
+  }
+
+  setDelayFlag(uniqueId: string, flags: number) {
+    const obsOutput = obs.OutputFactory.fromName(uniqueId);
+    const delay = this.state[uniqueId].delay;
+
+    obsOutput.setDelay(delay, flags);
+    this.UPDATE_DELAY_FLAG(uniqueId, flags);
+    this.queueChange(uniqueId);
+  }
+
+  getDelayFlag(uniqueId: string): number {
+    return this.state[uniqueId].delayFlags;
+  }
+
+  getPropertiesFormData(uniqueId: string) {
+    return this.propManagers[uniqueId].getPropertiesFormData();
+  }
+
+  setPropertiesFormData(uniqueId: string, formData: TFormData) {
+    this.propManagers[uniqueId].setPropertiesFormData(formData);
+
+    const settings = obs.OutputFactory.fromName(uniqueId).settings;
+    this.UPDATE_SETTINGS(uniqueId, settings);
+
+    this.queueChange(uniqueId);
+  }
 }

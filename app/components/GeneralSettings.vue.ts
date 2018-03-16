@@ -4,6 +4,7 @@ import { Component } from 'vue-property-decorator';
 import { CacheUploaderService } from 'services/cache-uploader';
 import { Inject } from 'util/injector';
 import BoolInput from 'components/shared/forms/BoolInput.vue';
+import IntInput from 'components/shared/forms/IntInput.vue';
 import { CustomizationService } from 'services/customization';
 import { IFormInput } from 'components/shared/forms/Input';
 import { StreamlabelsService } from 'services/streamlabels';
@@ -11,11 +12,12 @@ import { OnboardingService } from 'services/onboarding';
 import { WindowsService } from 'services/windows';
 import { UserService } from 'services/user';
 import { StreamingService } from 'services/streaming';
+import { SettingsStorageService } from 'services/settings';
 
 @Component({
-  components: { BoolInput }
+  components: { BoolInput, IntInput }
 })
-export default class ExtraSettings extends Vue {
+export default class GeneralSettings extends Vue {
   @Inject() cacheUploaderService: CacheUploaderService;
   @Inject() customizationService: CustomizationService;
   @Inject() streamlabelsService: StreamlabelsService;
@@ -23,6 +25,7 @@ export default class ExtraSettings extends Vue {
   @Inject() windowsService: WindowsService;
   @Inject() userService: UserService;
   @Inject() streamingService: StreamingService;
+  @Inject() settingsStorageService: SettingsStorageService;
 
   cacheUploading = false;
 
@@ -88,5 +91,75 @@ export default class ExtraSettings extends Vue {
     return (
       this.streamingService.isStreaming || this.streamingService.isRecording
     );
+  }
+
+  snappingCollapsed = false;
+
+  get snappingEnabled(): IFormInput<boolean> {
+    return {
+      value: this.settingsStorageService.state.Settings.General.SnappingEnabled,
+      name: 'snapping_enabled',
+      description: 'Enabled'
+    };
+  }
+
+  set snappingEnabled(formData: IFormInput<boolean>) {
+    this.settingsStorageService.setSettings({
+      General: {
+        ...this.settingsStorageService.state.Settings.General,
+        SnappingEnabled: formData.value
+      }
+    });
+  }
+
+  get snappingSensitivity(): IFormInput<number> {
+    return {
+      value: this.settingsStorageService.state.Settings.General.SnapDistance,
+      name: 'snapping_distance',
+      description: 'Snapping Sensitivity'
+    };
+  }
+
+  set snappingSensitivity(formData: IFormInput<number>) {
+    this.settingsStorageService.setSettings({
+      General: {
+        ...this.settingsStorageService.state.Settings.General,
+        SnapDistance: formData.value
+      }
+    });
+  }
+
+  get snappingEdges(): IFormInput<boolean> {
+    return {
+      value: this.settingsStorageService.state.Settings.General.ScreenSnapping,
+      name: 'snapping_edge',
+      description: 'Snap sources to edge of screen'
+    };
+  }
+
+  set snappingEdges(formData: IFormInput<boolean>) {
+    this.settingsStorageService.setSettings({
+      General: {
+        ...this.settingsStorageService.state.Settings.General,
+        ScreenSnapping: formData.value
+      }
+    });
+  }
+
+  get snappingSources(): IFormInput<boolean> {
+    return {
+      value: this.settingsStorageService.state.Settings.General.SourceSnapping,
+      name: 'snapping_sources',
+      description: 'Snap sources to other sources'
+    };
+  }
+
+  set snappingSources(formData: IFormInput<boolean>) {
+    this.settingsStorageService.setSettings({
+      General: {
+        ...this.settingsStorageService.state.Settings.General,
+        SourceSnapping: formData.value
+      }
+    });
   }
 }

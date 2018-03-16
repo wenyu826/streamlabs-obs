@@ -7,6 +7,7 @@ import { WindowsService } from './windows';
 import { ScalableRectangle } from '../util/ScalableRectangle';
 import { Subscription } from 'rxjs/Subscription';
 import { SelectionService } from 'services/selection';
+import { SettingsStorageService } from './settings';
 
 const { remote } = electron;
 
@@ -132,6 +133,9 @@ export class Display {
 }
 
 export class VideoService extends Service {
+
+  @Inject() settingsStorageService: SettingsStorageService;
+
   activeDisplays: Dictionary<Display> = {};
 
   init() {
@@ -184,10 +188,8 @@ export class VideoService extends Service {
   }
 
   get baseResolution() {
-    return {
-      width: 1280,
-      height: 720
-    };
+    const res = this.settingsStorageService.state.Settings.Video.BaseResolution;
+    return this.settingsStorageService.parseResolutionString(res);
   }
 
 }

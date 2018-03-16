@@ -16,20 +16,18 @@
       </NavItem>
     </NavMenu>
     <div class="settings-container">
-      <extra-settings v-if="categoryName === 'General'" />
-      <rtmp-output-settings v-if="categoryName === 'Output'" />
+      <general-settings v-if="categoryName === 'General'" />
+      <outputs-settings v-if="categoryName === 'Output'" />
       <audio-settings v-if="categoryName === 'Audio'" />
       <video-settings v-if="categoryName === 'Video'" />
       <stream-settings v-if="categoryName === 'Stream'" />
+      <advanced-settings v-if="categoryName === 'Advanced'" />
       <hotkeys v-if="categoryName === 'Hotkeys'" />
       <api-settings v-if="categoryName === 'API'" />
       <overlay-settings v-if="categoryName === 'Overlays'" />
       <notifications-settings v-if="categoryName === 'Notifications'" />
       <appearance-settings v-if="categoryName === 'Appearance'" />
       <experimental-settings v-if="categoryName === 'Experimental'" />
-      <GenericFormGroups
-        v-if="!['Hotkeys', 'API', 'Overlays', 'Notifications', 'Appearance', 'Experimental'].includes(categoryName)"
-      />
     </div>
   </div>
 </modal-layout>

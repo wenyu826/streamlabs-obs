@@ -38,16 +38,7 @@ export class PerformanceService extends StatefulService<IPerformanceState> {
 
   init() {
     this.intervalId = window.setInterval(() => {
-      const stats: IPerformanceState = nodeObs.OBS_API_getPerformanceStatistics();
-      if (stats.percentageDroppedFrames) {
-        this.droppedFramesDetected.next(stats.percentageDroppedFrames / 100);
-      }
-
-      stats.CPU = electron.remote.app.getAppMetrics().map(proc => {
-        return proc.cpu.percentCPUUsage;
-      }).reduce((sum, usage) => sum + usage);
-
-      this.SET_PERFORMANCE_STATS(stats);
+      console.warn('Performance Stats not implemented yet');
     }, 2 * 1000);
   }
 

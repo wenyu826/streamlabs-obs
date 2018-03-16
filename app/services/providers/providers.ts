@@ -72,7 +72,6 @@ export class ProviderService extends StatefulService<TProviderServiceState> {
 
     this.db.put({
       ... change,
-      _id: uniqueId,
       _rev: this.state[uniqueId].revision
     }).then((response) => { this.handleChange(response); });
   }
@@ -91,8 +90,6 @@ export class ProviderService extends StatefulService<TProviderServiceState> {
   private syncConfig(result: any): void {
     for (let i = 0; i < result.total_rows; ++i) {
       const entry = result.rows[i].doc;
-
-      console.log(entry);
 
       const provider: FProvider = {
         revision: entry._rev,

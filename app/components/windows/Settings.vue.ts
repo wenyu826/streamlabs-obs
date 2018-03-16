@@ -7,17 +7,18 @@ import NavItem from '../shared/NavItem.vue';
 import GenericFormGroups from '../shared/forms/GenericFormGroups.vue';
 import { WindowsService } from '../../services/windows';
 import windowMixin from '../mixins/window';
-import ExtraSettings from '../ExtraSettings.vue';
+import GeneralSettings from '../GeneralSettings.vue';
 import ApiSettings from '../ApiSettings.vue';
 import Hotkeys from '../Hotkeys.vue';
 import OverlaySettings from 'components/OverlaySettings.vue';
 import NotificationsSettings from 'components/NotificationsSettings.vue';
 import AppearanceSettings from 'components/AppearanceSettings.vue';
 import ExperimentalSettings from 'components/ExperimentalSettings.vue';
-import RtmpOutputSettings from 'components/RtmpOutputSettings.vue';
+import OutputsSettings from 'components/OutputsSettings.vue';
 import StreamSettings from 'components/StreamSettings.vue';
 import AudioSettings from 'components/AudioSettings.vue';
 import VideoSettings from 'components/VideoSettings.vue';
+import AdvancedSettings from 'components/AdvancedSettings.vue';
 
 @Component({
   components: {
@@ -25,17 +26,18 @@ import VideoSettings from 'components/VideoSettings.vue';
     GenericFormGroups,
     NavMenu,
     NavItem,
-    ExtraSettings,
+    GeneralSettings,
     Hotkeys,
     ApiSettings,
     OverlaySettings,
     NotificationsSettings,
     AppearanceSettings,
     ExperimentalSettings,
-    RtmpOutputSettings,
+    OutputsSettings,
     StreamSettings,
     AudioSettings,
-    VideoSettings
+    VideoSettings,
+    AdvancedSettings
   },
   mixins: [windowMixin]
 })

@@ -17,8 +17,10 @@ import { StreamlabelsService } from '../streamlabels';
 import { PerformanceMonitorService } from '../performance-monitor';
 import { SceneCollectionsService } from 'services/scene-collections';
 import { FileManagerService } from 'services/file-manager';
+import { RecOutputService } from 'services/recording-output';
 import { RtmpOutputService } from 'services/rtmp-output';
 import { SettingsStorageService } from 'services/settings';
+import { Global, AudioFactory, VideoFactory } from 'services/obs-api';
 
 interface IAppState {
   loading: boolean;
@@ -36,16 +38,9 @@ export class AppService extends StatefulService<IAppState> {
   @Inject() userService: UserService;
   @Inject() shortcutsService: ShortcutsService;
   @Inject() streamInfoService: StreamInfoService;
-
-  static initialState: IAppState = {
-    loading: true,
-    argv: []
-  };
-
-  private autosaveInterval: number;
-
   @Inject() settingsStorageService: SettingsStorageService;
   @Inject() scenesTransitionsService: ScenesTransitionsService;
+  @Inject() recOutputService: RecOutputService;
   @Inject() rtmpOutputService: RtmpOutputService;
   @Inject() sourcesService: SourcesService;
   @Inject() scenesService: ScenesService;
@@ -55,6 +50,13 @@ export class AppService extends StatefulService<IAppState> {
   @Inject() private tcpServerService: TcpServerService;
   @Inject() private performanceMonitorService: PerformanceMonitorService;
   @Inject() private fileManagerService: FileManagerService;
+
+  static initialState: IAppState = {
+    loading: true,
+    argv: []
+  };
+
+  private autosaveInterval: number;
 
   @track('app_start')
   load() {
@@ -91,8 +93,12 @@ export class AppService extends StatefulService<IAppState> {
      * be fine */
     const asyncInit = async () => {
       await this.settingsStorageService.initialize();
+      this.settingsStorageService.resetVideo();
+      this.settingsStorageService.resetAudio();
+      await this.recOutputService.initialize();
       await this.rtmpOutputService.initialize();
-      await this.sceneCollectionsService.initialize().then(handleSceneConfig);
+      await this.sceneCollectionsService.initialize();
+      handleSceneConfig();
     };
 
     asyncInit();

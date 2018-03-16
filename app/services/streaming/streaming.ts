@@ -9,11 +9,15 @@ import { WindowsService } from '../windows';
 import { Subject } from 'rxjs/Subject';
 import { IStreamingServiceApi, IStreamingServiceState } from './streaming-api';
 import electron from 'electron';
+import { RtmpOutputService } from 'services/rtmp-output';
+import { RecOutputService } from '../recording-output';
 
 
 export class StreamingService extends StatefulService<IStreamingServiceState> implements IStreamingServiceApi {
 
-  @Inject() settingsService: SettingsStorageService;
+  @Inject() rtmpOutputService: RtmpOutputService;
+  @Inject() recOutputService: RecOutputService;
+  @Inject() settingsStorageService: SettingsStorageService;
   @Inject() windowsService: WindowsService;
 
   static initialState = {
@@ -81,25 +85,7 @@ export class StreamingService extends StatefulService<IStreamingServiceState> im
 
   // Only runs once per app lifecycle
   init() {
-
-    // Initialize the stream check interval
-    setInterval(
-      () => {
-        let status;
-
-        if (this.state.isStreaming) {
-          status = nodeObs.OBS_service_isStreamingOutputActive() === '1';
-        } else {
-          status = null;
-        }
-
-        this.SET_STREAM_STATUS(status);
-        this.emitStateIfChanged();
-      },
-      10 * 1000
-    );
   }
-
 
   getModel(): IStreamingServiceState {
     return this.state;
@@ -108,21 +94,49 @@ export class StreamingService extends StatefulService<IStreamingServiceState> im
 
   @track('stream_start')
   startStreaming() {
-    /* FIXME TODO */
+    const Settings = this.settingsStorageService.state.Settings;
+
+    if (this.state.isStreaming) return;
+
+    const shouldConfirm = Settings.General.WarnBeforeStartingStream;
+    const confirmText = 'Are you sure you want to start streaming?';
+
+    if (shouldConfirm && !confirm(confirmText)) return;
+
+    this.powerSaveId = electron.remote.powerSaveBlocker.start('prevent-display-sleep');
+
+    this.rtmpOutputService.start();
+    this.START_STREAMING((new Date()).toISOString(), this.delayEnabled);
+
+    if (this.state.usingDelay) {
+      this.goLiveTimeout = window.setTimeout(() => {
+        this.SET_IS_LIVE(true);
+      }, this.delaySeconds * 1000);
+    } else {
+      this.SET_IS_LIVE(true);
+    }
+
+    const recordWhenStreaming = Settings.General.RecordWhenStreaming;
+
+    if (recordWhenStreaming && !this.state.isRecording) {
+      this.startRecording();
+    }
+
+    this.emitStateIfChanged();
   }
 
   @track('stream_end')
   stopStreaming() {
     if (!this.state.isStreaming) return;
 
-    const shouldConfirm = this.settingsService.state.Settings.General.WarnBeforeStoppingStream;
+    const shouldConfirm = this.settingsStorageService.state.Settings.General.WarnBeforeStoppingStream;
     const confirmText = 'Are you sure you want to stop streaming?';
 
     if (shouldConfirm && !confirm(confirmText)) return;
 
     if (this.powerSaveId) electron.remote.powerSaveBlocker.stop(this.powerSaveId);
 
-    nodeObs.OBS_service_stopStreaming(false);
+    this.rtmpOutputService.stop();
     this.STOP_STREAMING((new Date()).toISOString());
     this.SET_STREAM_STATUS(null);
 
@@ -134,7 +148,7 @@ export class StreamingService extends StatefulService<IStreamingServiceState> im
       this.SET_IS_LIVE(false);
     }
 
-    const keepRecording = this.settingsService.state.Settings.General.KeepRecordingWhenStreamStops;
+    const keepRecording = this.settingsStorageService.state.Settings.General.KeepRecordingWhenStreamStops;
 
     if (!keepRecording && this.state.isRecording) {
       this.stopRecording();
@@ -147,7 +161,7 @@ export class StreamingService extends StatefulService<IStreamingServiceState> im
     if (this.state.isStreaming) return;
     if (!this.delaySecondsRemaining) return;
 
-    nodeObs.OBS_service_stopStreaming(true);
+    this.recOutputService.stop();
     if (this.goLiveTimeout) clearTimeout(this.goLiveTimeout);
     if (this.endLiveTimeout) clearTimeout(this.endLiveTimeout);
     this.DISCARD_STREAM_DELAY();
@@ -156,7 +170,7 @@ export class StreamingService extends StatefulService<IStreamingServiceState> im
   startRecording() {
     if (this.state.isRecording) return;
 
-    nodeObs.OBS_service_startRecording();
+    this.recOutputService.start();
     this.START_RECORDING((new Date()).toISOString());
     this.emitStateIfChanged();
   }
@@ -164,7 +178,7 @@ export class StreamingService extends StatefulService<IStreamingServiceState> im
   stopRecording() {
     if (!this.state.isRecording) return;
 
-    nodeObs.OBS_service_stopRecording();
+    this.recOutputService.stop();
     this.STOP_RECORDING();
     this.emitStateIfChanged();
   }
@@ -241,11 +255,11 @@ export class StreamingService extends StatefulService<IStreamingServiceState> im
   }
 
   get delayEnabled() {
-    return this.settingsService.state.Settings.Delay.Enabled;
+    return this.settingsStorageService.state.Settings.Delay.Enabled;
   }
 
   get delaySeconds() {
-    return this.settingsService.state.Settings.Delay.Seconds;
+    return this.settingsStorageService.state.Settings.Delay.Seconds;
   }
 
   get delaySecondsRemaining() {

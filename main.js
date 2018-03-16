@@ -14,6 +14,7 @@ process.env.SLOBS_VERSION = pjson.version;
 ////////////////////////////////////////////////////////////////////////////////
 const { app, BrowserWindow, ipcMain, session, crashReporter, dialog } = require('electron');
 const bt = require('backtrace-node');
+const osn = require('obs-studio-node'); 
 
 app.disableHardwareAcceleration();
 
@@ -116,7 +117,6 @@ function getObs() {
   return _obs;
 }
 
-
 function startApp() {
   const isDevMode = (process.env.NODE_ENV !== 'production') && (process.env.NODE_ENV !== 'test');
 
@@ -178,7 +178,7 @@ function startApp() {
   mainWindow.on('closed', () => {
     require('node-libuiohook').stopHook();
     session.defaultSession.flushStorageData();
-    getObs().OBS_API_destroyOBS_API();
+    osn.Global.shutdown();
     app.quit();
   });
 
@@ -265,12 +265,12 @@ function startApp() {
 
   }
 
-  // Initialize various OBS services
-  getObs().SetWorkingDirectory(
+  const workingDirectory =
     path.join(app.getAppPath().replace('app.asar', 'app.asar.unpacked') + 
-              '/node_modules/obs-studio-node'));
+              '/node_modules/obs-studio-node/libobs');
 
-  getObs().OBS_API_initAPI(app.getPath('userData'));
+  osn.Global.startup('en-US', workingDirectory);
+  osn.ModuleFactory.loadAll();
 }
 
 // We use a special cache directory for running tests
@@ -457,6 +457,8 @@ ipcMain.on('obs-apiCall', (event, data) => {
 
     return arg;
   });
+
+  log(`${data.method} called`);
 
   if (nodeObsVirtualMethods[data.method]) {
     retVal = nodeObsVirtualMethods[data.method].apply(null, mappedArgs);

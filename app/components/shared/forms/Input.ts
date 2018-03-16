@@ -137,6 +137,8 @@ function parsePathFilters(filterStr: string): IElectronOpenDialogFilter[] {
 
 export function getPropertiesFormData(obsSource: obs.IConfigurable): TFormData {
 
+  setupSourceDefaults(obsSource);
+  
   const formData: TFormData = [];
   const obsProps = obsSource.properties;
   const obsSettings = obsSource.settings;
@@ -249,12 +251,33 @@ export function setupSourceDefaults(obsSource: obs.IConfigurable) {
 
   let obsProp = properties.first();
   do {
-    if (
-      propSettings[obsProp.name] !== void 0 ||
-      !isListProperty(obsProp) ||
-      obsProp.details.items.length === 0
-    ) continue;
-    defaultSettings[obsProp.name] = obsProp.details.items[0].value;
+    if (!isListProperty(obsProp)) 
+      continue;
+
+    const items = obsProp.details.items;
+
+    if (items.length === 0)
+      continue;
+
+    /* If setting isn't set at all, set to first element. */
+    if (propSettings[obsProp.name] === void 0) {
+      defaultSettings[obsProp.name] = items[0].value;
+      continue;
+    }
+
+    let validItem = false;
+
+    /* If there is a setting, make sure it's a valid item */
+    for (let i = 0; i < items.length; ++i) {
+      if (propSettings[obsProp.name] === items[i].value) {
+        validItem = true;
+        break;
+      }
+    }
+
+    if (!validItem)
+      defaultSettings[obsProp.name] = items[0].value;
+
   } while (obsProp = obsProp.next());
   const needUpdate = Object.keys(defaultSettings).length > 0;
   if (needUpdate) obsSource.update(defaultSettings);

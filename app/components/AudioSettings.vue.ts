@@ -10,7 +10,7 @@ import { EPropertyType, InputFactory } from 'services/obs-api';
 interface AudioLayout {
     name: string,
     desc: string,
-    type: TSourceType
+    type: string
 }
 
 @Component({
@@ -22,12 +22,22 @@ export default class AudioSettings extends Vue {
     @Inject() sourcesService: SourcesService;
 
     private audioDeviceLayout: AudioLayout[] = [
-        { name: 'Desktop Audio', desc: 'Desktop Audio Device', type: 'wasapi_output_capture' },
-        { name: 'Desktop Audio 2', desc: 'Desktop Audio Device 2', type: 'wasapi_output_capture' },
-        { name: 'Mic/Aux', desc: 'Mic/Auxillary Device', type: 'wasapi_input_capture' },
-        { name: 'Mic/Aux 2', desc: 'Mic/Auxillary Device 2', type: 'wasapi_input_capture' },
-        { name: 'Mic/Aux 3', desc: 'Mic/Auxillary Device 3', type: 'wasapi_input_capture' }
+        { name: 'Desktop Audio', desc: 'Desktop Audio Device', type: 'output' },
+        { name: 'Desktop Audio 2', desc: 'Desktop Audio Device 2', type: 'output' },
+        { name: 'Mic/Aux', desc: 'Mic/Auxillary Device', type: 'input' },
+        { name: 'Mic/Aux 2', desc: 'Mic/Auxillary Device 2', type: 'input' },
+        { name: 'Mic/Aux 3', desc: 'Mic/Auxillary Device 3', type: 'input' }
     ];
+
+    private getAudioType(type: string) {
+        /* Expand this for other platforms */
+        switch (type) {
+            case 'output':
+                return 'wasapi_output_capture';
+            case 'input':
+                return 'wasapi_input_capture';
+        }
+    }
 
     get settingsFormData() {
         const audioDevices = this.audioService.getDevices();
@@ -54,8 +64,9 @@ export default class AudioSettings extends Vue {
                 value = obsSource.settings['device_id'];
             }
 
+            const type = this.audioDeviceLayout[i].type;
             const options = 
-                audioDevices.filter(device => device.type === 'output')
+                audioDevices.filter(device => device.type === type)
                 .map(device => {
                     return { description: device.description, value: device.id };
                 });
@@ -94,7 +105,7 @@ export default class AudioSettings extends Vue {
             if (!source) {
                 this.sourcesService.createSource(
                     formData[i].name,
-                    this.audioDeviceLayout[i].type,
+                    this.getAudioType(this.audioDeviceLayout[i].type),
                     {},
                     { channel });
 

@@ -1,9 +1,10 @@
 import * as obs from '../obs-api';
 
-class FEncoder {
+export class FEncoder {
   revision: string;
   type: string;
   settings: obs.ISettings;
+  isAudio: boolean;
 
   constructor() {
     this.revision = null;
@@ -19,6 +20,7 @@ export class FAudioEncoder extends FEncoder {
 
     if (settings) this.settings = settings;
     this.type = type;
+    this.isAudio = true;
   }
 
   static init(type: string, uniqueId: string, settings?: obs.ISettings) {
@@ -26,12 +28,12 @@ export class FAudioEncoder extends FEncoder {
 
     if (settings)
       obsEncoder = obs.AudioEncoderFactory.create(type, uniqueId, settings);
-    else obsEncoder = obs.AudioEncoderFactory.create(type, uniqueId);
-
+    else 
+      obsEncoder = obs.AudioEncoderFactory.create(type, uniqueId);
+    
     if (!obsEncoder) throw 'failed to create audio encoder';
 
     const audio = obs.AudioFactory.getGlobal();
-    obsEncoder.setAudio(audio);
   }
 }
 
@@ -42,6 +44,7 @@ export class FVideoEncoder extends FEncoder {
 
     if (settings) this.settings = settings;
     this.type = type;
+    this.isAudio = false;
   }
 
   static init(type: string, uniqueId: string, settings?: obs.ISettings) {
@@ -49,11 +52,11 @@ export class FVideoEncoder extends FEncoder {
 
     if (settings)
       obsEncoder = obs.VideoEncoderFactory.create(type, uniqueId, settings);
-    else obsEncoder = obs.VideoEncoderFactory.create(type, uniqueId);
+    else 
+      obsEncoder = obs.VideoEncoderFactory.create(type, uniqueId);
 
     if (!obsEncoder) throw 'failed to create video encoder';
 
     const video = obs.VideoFactory.getGlobal();
-    obsEncoder.setVideo(video);
   }
 }

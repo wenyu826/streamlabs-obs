@@ -64,6 +64,7 @@ import { FileManagerService } from 'services/file-manager';
 import { OutputService } from 'services/outputs';
 import { ProviderService } from 'services/providers';
 import { EncoderService } from 'services/encoders';
+import { RecOutputService } from 'services/recording-output';
 import { RtmpOutputService } from 'services/rtmp-output';
 import { SettingsStorageService } from 'services/settings';
 
@@ -133,6 +134,7 @@ export class ServicesManager extends Service {
     OutputService,
     ProviderService,
     EncoderService,
+    RecOutputService,
     RtmpOutputService,
     SettingsStorageService
   };

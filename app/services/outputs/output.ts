@@ -19,6 +19,8 @@ export class FOutput {
   /* FIXME: libobs doesn't allow you to fetch
      * output capabilities yet */
   flags: number = 0;
+  delay: number = 0;
+  delayFlags: number = 0;
 
   starting: boolean = false;
   stopping: boolean = false;
