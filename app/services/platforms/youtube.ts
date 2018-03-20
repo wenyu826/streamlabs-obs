@@ -3,7 +3,7 @@ import { StatefulService, mutation } from './../stateful-service';
 import { IPlatformService, IChannelInfo, IPlatformAuth } from '.';
 import { HostsService } from '../hosts';
 import { Inject } from '../../util/injector';
-import { handleErrors } from '../../util/requests';
+import { handleErrors, requiresToken } from '../../util/requests';
 import { UserService } from '../user';
 
 interface IYoutubeServiceState {
@@ -233,28 +233,4 @@ export class YoutubeService extends StatefulService<IYoutubeServiceState> implem
       this.ableToStream();
     });
   }
-}
-
-/**
- * You can use this decorator to ensure that a
- * fresh youtube api token is available
- */
-function requiresToken() {
-  return (target: any, methodName: string, descriptor: PropertyDescriptor) => {
-    const original = descriptor.value;
-    return {
-      ...descriptor,
-      value(...args: any[]) {
-        return original.apply(target.constructor.instance, args)
-        .catch((error: Response) => {
-          if (error.status === 401) {
-            return target.fetchNewToken().then(() => {
-              return original.apply(target.constructor.instance, args);
-            });
-          }
-          return Promise.reject(error);
-        });
-      }
-    };
-  };
 }

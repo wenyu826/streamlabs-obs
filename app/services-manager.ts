@@ -4,6 +4,7 @@ import { AutoConfigService } from './services/auto-config';
 import { ObsImporterService } from './services/obs-importer';
 import { YoutubeService } from './services/platforms/youtube';
 import { TwitchService } from './services/platforms/twitch';
+import { MixerService } from './services/platforms/mixer';
 import { ScenesService, SceneItem, SceneItemFolder, Scene, SceneItemNode } from './services/scenes';
 import { ClipboardService } from './services/clipboard';
 import { AudioService, AudioSource } from './services/audio';
@@ -80,6 +81,7 @@ export class ServicesManager extends Service {
     AutoConfigService,
     YoutubeService,
     TwitchService,
+    MixerService,
     ScenesService,
     SceneItemNode,
     SceneItem,
@@ -221,6 +223,7 @@ export class ServicesManager extends Service {
           return;
         const promisePayload = message.result;
         if (promisePayload) {
+          if (!promises[promisePayload.resourceId]) return; // this promise created from another API client
           const [resolve, reject] = promises[promisePayload.resourceId];
           const callback = promisePayload.isRejected ? reject : resolve;
           callback(promisePayload.data);
@@ -354,7 +357,7 @@ export class ServicesManager extends Service {
 
       response = this.jsonrpc.createResponse(request, {
         _type: 'HELPER',
-        resourceId: helper.resourceId,
+        resourceId: helper._resourceId,
         ...!compactMode ? this.getHelperModel(helper) : {}
       });
     } else if (responsePayload && responsePayload instanceof Service) {
@@ -371,7 +374,7 @@ export class ServicesManager extends Service {
           const helper = this.getHelper(item.helperName, item.constructorArgs);
           return {
             _type: 'HELPER',
-            resourceId: helper.resourceId,
+            resourceId: helper._resourceId,
             ...!compactMode ? this.getHelperModel(helper) : {}
           };
         }
@@ -483,7 +486,7 @@ export class ServicesManager extends Service {
           const response: IJsonRpcResponse<any> = electron.ipcRenderer.sendSync(
             'services-request',
             this.jsonrpc.createRequestWithOptions(
-              isHelper ? target['resourceId'] : serviceName,
+              isHelper ? target['_resourceId'] : serviceName,
               methodName as string,
               { compactMode: true, fetchMutations: true },
               ...args

@@ -45,6 +45,7 @@ export interface ITcpServerServiceAPI {
   stopListening(): void;
 }
 
+const TCP_PORT = 28194;
 
 export class TcpServerService extends Service implements ITcpServerServiceAPI {
 

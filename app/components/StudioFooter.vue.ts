@@ -31,11 +31,7 @@ export default class StudioFooterComponent extends Vue {
   }
 
   toggleRecording() {
-    if (this.recording) {
-      this.streamingService.stopRecording();
-    } else {
-      this.streamingService.startRecording();
-    }
+    this.streamingService.toggleRecording();
   }
 
   get recording() {
@@ -62,10 +58,12 @@ export default class StudioFooterComponent extends Vue {
   }
 
   confirmYoutubeEnabled() {
-    const platform = this.userService.platform.type;
-    const service = getPlatformService(platform);
-    if (service instanceof YoutubeService) {
-      service.verifyAbleToStream();
+    if (this.userService.platform) {
+      const platform = this.userService.platform.type;
+      const service = getPlatformService(platform);
+      if (service instanceof YoutubeService) {
+        service.verifyAbleToStream();
+      }
     }
   }
 }
