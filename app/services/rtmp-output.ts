@@ -196,7 +196,7 @@ export class RtmpOutputService extends StatefulService<RtmpOutputServiceState> {
   }
 
   start() {
-    this.outputService.startOutput(this.state.rtmpOutputId);
+    return this.outputService.startOutput(this.state.rtmpOutputId);
   }
 
   stop() {

@@ -261,8 +261,8 @@ export class OutputService extends StatefulService<TOutputServiceState> {
     videoEncoder.setVideo(obs.VideoFactory.getGlobal());
     audioEncoder.setAudio(obs.AudioFactory.getGlobal());
 
-    output.start();
     this.START_OUTPUT(uniqueId);
+    return output.start();
   }
 
   stopOutput(uniqueId: string) {
@@ -384,5 +384,35 @@ export class OutputService extends StatefulService<TOutputServiceState> {
     this.UPDATE_SETTINGS(uniqueId, settings);
 
     this.queueChange(uniqueId);
+  }
+
+  onStart(uniqueId: string, callback: (output: string) => void) {
+    const obsOutput = obs.OutputFactory.fromName(uniqueId);
+
+    obsOutput.on('start', callback);
+  }
+
+  onStop(uniqueId: string, callback: (output: string, code: number) => void) {
+    const obsOutput = obs.OutputFactory.fromName(uniqueId);
+
+    obsOutput.on('stop', callback);
+  }
+
+  onReconnect(uniqueId: string, callback: (output: string) => void) {
+    const obsOutput = obs.OutputFactory.fromName(uniqueId);
+
+    obsOutput.on('reconnect', callback);
+  }
+
+  onReconnectSuccess(uniqueId: string, callback: (output: string) => void) {
+    const obsOutput = obs.OutputFactory.fromName(uniqueId);
+    
+    obsOutput.on('reconnect_success', callback);
+  }
+
+  getLastError(uniqueId: string): string {
+    const obsOutput = obs.OutputFactory.fromName(uniqueId);
+
+    return obsOutput.getLastError();
   }
 }

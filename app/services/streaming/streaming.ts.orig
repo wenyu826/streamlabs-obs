@@ -2,25 +2,37 @@ import { StatefulService, mutation } from 'services/stateful-service';
 import { ObsApiService, EOutputCode } from 'services/obs-api';
 import { Inject } from 'util/injector';
 import moment from 'moment';
-import { padStart } from 'lodash';
+<<<<<<< HEAD
 import { SettingsStorageService } from 'services/settings';
+import { Inject } from '../../util/injector';
+import { StatefulService, mutation } from '../stateful-service';
+import { nodeObs } from '../obs-api';
+import { padStart, isEqual } from 'lodash';
+import { track } from '../usage-statistics';
+import { WindowsService } from '../windows';
+=======
+import { padStart } from 'lodash';
+import { SettingsService } from 'services/settings';
 import { WindowsService } from 'services/windows';
+>>>>>>> 7e2c0ae0a2746a8f162fa0c2e816e400d0b2fc5e
 import { Subject } from 'rxjs/Subject';
 import electron from 'electron';
+<<<<<<< HEAD
+import { RtmpOutputService } from 'services/rtmp-output';
+import { RecOutputService } from '../recording-output';
+=======
 import {
   IStreamingServiceApi,
   IStreamingServiceState,
   EStreamingState,
   ERecordingState
 } from './streaming-api';
-import { RecOutputService } from '../recording-output';
-import { OutputService } from '../outputs';
-import { RtmpOutputService } from '../rtmp-output';
 
 enum EOBSOutputType {
   Streaming = 'streaming',
   Recording = 'recording'
 }
+>>>>>>> 7e2c0ae0a2746a8f162fa0c2e816e400d0b2fc5e
 
 enum EOBSOutputSignal {
   Starting = 'starting',
@@ -35,16 +47,20 @@ interface IOBSOutputSignalInfo {
   type: EOBSOutputType;
   signal: EOBSOutputSignal;
   code: EOutputCode;
+  error: string;
 }
 
+<<<<<<< HEAD
+  @Inject() rtmpOutputService: RtmpOutputService;
+  @Inject() recOutputService: RecOutputService;
+  @Inject() settingsStorageService: SettingsStorageService;
+=======
 export class StreamingService extends StatefulService<IStreamingServiceState>
   implements IStreamingServiceApi {
   @Inject() obsApiService: ObsApiService;
-  @Inject() settingsStorageService: SettingsStorageService;
+  @Inject() settingsService: SettingsService;
+>>>>>>> 7e2c0ae0a2746a8f162fa0c2e816e400d0b2fc5e
   @Inject() windowsService: WindowsService;
-  @Inject() recOutputService: RecOutputService;
-  @Inject() rtmpOutputService: RtmpOutputService;
-  @Inject() outputService: OutputService;
 
   streamingStatusChange = new Subject<EStreamingState>();
 
@@ -61,43 +77,11 @@ export class StreamingService extends StatefulService<IStreamingServiceState>
   };
 
   init() {
-  }
-
-  async initialize() {
-    await this.rtmpOutputService.initialize();
-    const outputId = this.rtmpOutputService.getOutputId();
-    
-    this.outputService.onStart(outputId, (id) => {
-      this.handleOBSOutputSignal({
-        type: EOBSOutputType.Streaming,
-        signal: EOBSOutputSignal.Start,
-        code: 0
-      });
-    });
-
-    this.outputService.onStop(outputId, (id, code) => {
-      this.handleOBSOutputSignal({
-        type: EOBSOutputType.Streaming,
-        signal: EOBSOutputSignal.Stop,
-        code
-      });
-    });
-
-    this.outputService.onReconnect(outputId, (id) => {
-      this.handleOBSOutputSignal({
-        type: EOBSOutputType.Streaming,
-        signal: EOBSOutputSignal.Reconnect,
-        code: 0
-      });
-    });
-
-    this.outputService.onReconnectSuccess(outputId, (id) => {
-      this.handleOBSOutputSignal({
-        type: EOBSOutputType.Streaming,
-        signal: EOBSOutputSignal.ReconnectSuccess,
-        code: 0
-      });
-    });
+    this.obsApiService.nodeObs.OBS_service_connectOutputSignals(
+      (info: IOBSOutputSignalInfo) => {
+        this.handleOBSOutputSignal(info);
+      }
+    );
   }
 
   getModel() {
@@ -112,6 +96,24 @@ export class StreamingService extends StatefulService<IStreamingServiceState>
     return this.state.recordingStatus !== ERecordingState.Offline;
   }
 
+<<<<<<< HEAD
+  goLiveTimeout: number = null;
+  endLiveTimeout: number = null;
+
+  streamingStateChange = new Subject<IStreamingServiceState>();
+
+  powerSaveId: number;
+
+  private emittedState: IStreamingServiceState;
+
+
+  // Only runs once per app lifecycle
+  init() {
+  }
+
+  getModel(): IStreamingServiceState {
+    return this.state;
+=======
   /**
    * @deprecated Use toggleStreaming instead
    */
@@ -124,34 +126,68 @@ export class StreamingService extends StatefulService<IStreamingServiceState>
    */
   stopStreaming() {
     this.toggleStreaming();
+>>>>>>> 7e2c0ae0a2746a8f162fa0c2e816e400d0b2fc5e
   }
 
   toggleStreaming() {
-    const Settings =  this.settingsStorageService.state.Settings.General;
-
     if (this.state.streamingStatus === EStreamingState.Offline) {
-      const shouldConfirm = Settings.WarnBeforeStartingStream;
+      const shouldConfirm = this.settingsService.state.General
+        .WarnBeforeStartingStream;
       const confirmText = 'Are you sure you want to start streaming?';
 
+<<<<<<< HEAD
+  @track('stream_start')
+  startStreaming() {
+    const Settings = this.settingsStorageService.state.Settings;
+
+    if (this.state.isStreaming) return;
+
+    const shouldConfirm = Settings.General.WarnBeforeStartingStream;
+    const confirmText = 'Are you sure you want to start streaming?';
+=======
       if (shouldConfirm && !confirm(confirmText)) return;
 
       this.powerSaveId = electron.remote.powerSaveBlocker.start(
         'prevent-display-sleep'
       );
+      this.obsApiService.nodeObs.OBS_service_startStreaming();
+>>>>>>> 7e2c0ae0a2746a8f162fa0c2e816e400d0b2fc5e
 
-      if (!this.rtmpOutputService.start()) {
-        alert(`Failed to start output: ${this.outputService.getLastError(this.rtmpOutputService.getOutputId())}`);
-        return;
-      }
+      const recordWhenStreaming = this.settingsService.state.General
+        .RecordWhenStreaming;
 
-      this.handleOBSOutputSignal({
-        type: EOBSOutputType.Streaming,
-        signal: EOBSOutputSignal.Starting,
-        code: 0
-      });
+<<<<<<< HEAD
+    this.powerSaveId = electron.remote.powerSaveBlocker.start('prevent-display-sleep');
 
-      const recordWhenStreaming = Settings.RecordWhenStreaming;
+    this.rtmpOutputService.start();
+    this.START_STREAMING((new Date()).toISOString(), this.delayEnabled);
 
+    if (this.state.usingDelay) {
+      this.goLiveTimeout = window.setTimeout(() => {
+        this.SET_IS_LIVE(true);
+      }, this.delaySeconds * 1000);
+    } else {
+      this.SET_IS_LIVE(true);
+    }
+
+    const recordWhenStreaming = Settings.General.RecordWhenStreaming;
+
+    if (recordWhenStreaming && !this.state.isRecording) {
+      this.startRecording();
+    }
+
+    this.emitStateIfChanged();
+  }
+
+  @track('stream_end')
+  stopStreaming() {
+    if (!this.state.isStreaming) return;
+
+    const shouldConfirm = this.settingsStorageService.state.Settings.General.WarnBeforeStoppingStream;
+    const confirmText = 'Are you sure you want to stop streaming?';
+
+    if (shouldConfirm && !confirm(confirmText)) return;
+=======
       if (
         recordWhenStreaming &&
         this.state.recordingStatus === ERecordingState.Offline
@@ -166,44 +202,75 @@ export class StreamingService extends StatefulService<IStreamingServiceState>
       this.state.streamingStatus === EStreamingState.Starting ||
       this.state.streamingStatus === EStreamingState.Live
     ) {
-      const shouldConfirm = Settings.WarnBeforeStoppingStream;
+      const shouldConfirm = this.settingsService.state.General
+        .WarnBeforeStoppingStream;
       const confirmText = 'Are you sure you want to stop streaming?';
 
       if (shouldConfirm && !confirm(confirmText)) return;
 
       if (this.powerSaveId)
         electron.remote.powerSaveBlocker.stop(this.powerSaveId);
+>>>>>>> 7e2c0ae0a2746a8f162fa0c2e816e400d0b2fc5e
 
-      this.handleOBSOutputSignal({
-        type: EOBSOutputType.Streaming,
-        signal: EOBSOutputSignal.Stopping,
-        code: 0
-      });
+      this.obsApiService.nodeObs.OBS_service_stopStreaming(false);
 
-      this.rtmpOutputService.stop();
-
-      const keepRecording = Settings.KeepRecordingWhenStreamStops;
+<<<<<<< HEAD
+    this.rtmpOutputService.stop();
+    this.STOP_STREAMING((new Date()).toISOString());
+    this.SET_STREAM_STATUS(null);
+=======
+      const keepRecording = this.settingsService.state.General
+        .KeepRecordingWhenStreamStops;
       if (
         !keepRecording &&
         this.state.recordingStatus === ERecordingState.Recording
       ) {
         this.toggleRecording();
       }
+>>>>>>> 7e2c0ae0a2746a8f162fa0c2e816e400d0b2fc5e
 
       return;
     }
 
+<<<<<<< HEAD
+    const keepRecording = this.settingsStorageService.state.Settings.General.KeepRecordingWhenStreamStops;
+
+    if (!keepRecording && this.state.isRecording) {
+      this.stopRecording();
+    }
+
+    this.emitStateIfChanged();
+  }
+
+  discardStreamDelay() {
+    if (this.state.isStreaming) return;
+    if (!this.delaySecondsRemaining) return;
+
+    this.recOutputService.stop();
+    if (this.goLiveTimeout) clearTimeout(this.goLiveTimeout);
+    if (this.endLiveTimeout) clearTimeout(this.endLiveTimeout);
+    this.DISCARD_STREAM_DELAY();
+=======
     if (this.state.streamingStatus === EStreamingState.Ending) {
-      this.rtmpOutputService.stop();
+      this.obsApiService.nodeObs.OBS_service_stopStreaming(true);
       return;
     }
+>>>>>>> 7e2c0ae0a2746a8f162fa0c2e816e400d0b2fc5e
   }
 
   /**
    * @deprecated Use toggleRecording instead
    */
   startRecording() {
+<<<<<<< HEAD
+    if (this.state.isRecording) return;
+
+    this.recOutputService.start();
+    this.START_RECORDING((new Date()).toISOString());
+    this.emitStateIfChanged();
+=======
     this.toggleRecording();
+>>>>>>> 7e2c0ae0a2746a8f162fa0c2e816e400d0b2fc5e
   }
 
   /**
@@ -213,16 +280,22 @@ export class StreamingService extends StatefulService<IStreamingServiceState>
     this.toggleRecording();
   }
 
+<<<<<<< HEAD
+    this.recOutputService.stop();
+    this.STOP_RECORDING();
+    this.emitStateIfChanged();
+=======
   toggleRecording() {
     if (this.state.recordingStatus === ERecordingState.Recording) {
-      this.recOutputService.stop();
+      this.obsApiService.nodeObs.OBS_service_stopRecording();
       return;
     }
 
     if (this.state.recordingStatus === ERecordingState.Offline) {
-      this.recOutputService.start();
+      this.obsApiService.nodeObs.OBS_service_startRecording();
       return;
     }
+>>>>>>> 7e2c0ae0a2746a8f162fa0c2e816e400d0b2fc5e
   }
 
   showEditStreamInfo() {
@@ -237,11 +310,11 @@ export class StreamingService extends StatefulService<IStreamingServiceState>
   }
 
   get delayEnabled() {
-    return this.settingsStorageService.state.Settings.Delay.Enabled;
+    return this.settingsService.state.Advanced.DelayEnable;
   }
 
   get delaySeconds() {
-    return this.settingsStorageService.state.Settings.Delay.Seconds;
+    return this.settingsService.state.Advanced.DelaySec;
   }
 
   get delaySecondsRemaining() {
@@ -280,6 +353,22 @@ export class StreamingService extends StatefulService<IStreamingServiceState>
     return `${hours}:${minutes}:${seconds}`;
   }
 
+<<<<<<< HEAD
+  private emitStateIfChanged() {
+    if (isEqual(this.state, this.emittedState)) return;
+    const stateToEmit = { ...this.state };
+    this.streamingStateChange.next(this.state);
+    this.emittedState = stateToEmit;
+  }
+
+  get delayEnabled() {
+    return this.settingsStorageService.state.Settings.Delay.Enabled;
+  }
+
+  get delaySeconds() {
+    return this.settingsStorageService.state.Settings.Delay.Seconds;
+  }
+=======
   private handleOBSOutputSignal(info: IOBSOutputSignalInfo) {
     console.debug('OBS Output signal: ', info);
     if (info.type === EOBSOutputType.Streaming) {
@@ -317,63 +406,37 @@ export class StreamingService extends StatefulService<IStreamingServiceState>
         this.SET_RECORDING_STATUS(ERecordingState.Stopping, time);
       }
     }
+>>>>>>> 7e2c0ae0a2746a8f162fa0c2e816e400d0b2fc5e
 
-    if (info.code === 0) return;
+    if (info.code) {
+      let errorText = '';
 
-    let errorText = '';
+      if (info.code === EOutputCode.BadPath) {
+        errorText =
+          'Invalid Path or Connection URL.  Please check your settings to confirm that they are valid.';
+      } else if (info.code === EOutputCode.ConnectFailed) {
+        errorText =
+          'Failed to connect to the streaming server.  Please check your internet connection.';
+      } else if (info.code === EOutputCode.Disconnected) {
+        errorText =
+          'Disconnected from the streaming server.  Please check your internet connection.';
+      } else if (info.code === EOutputCode.InvalidStream) {
+        errorText =
+          'Could not access the specified channel or stream key, please double-check your stream key.  ' +
+          'If it is correct, there may be a problem connecting to the server.';
+      } else if (info.code === EOutputCode.NoSpace) {
+        errorText = 'There is not sufficient disk space to continue recording.';
+      } else if (info.code === EOutputCode.Unsupported) {
+        errorText =
+          'The output format is either unsupported or does not support more than one audio track.  ' +
+          'Please check your settings and try again.';
+      } else if (info.code === EOutputCode.Error) {
+        errorText = `An unexpected error occurred when trying to connect to the server: ${
+          info.error
+        }`;
+      }
 
-    if (EOBSOutputType.Streaming)
-      errorText = this.outputService.getLastError(this.rtmpOutputService.getOutputId());
-    else 
-      errorText = this.outputService.getLastError(this.recOutputService.getOutputId());
-
-    switch (info.code) {
-      case EOutputCode.BadPath:
-        alert(
-          'Invalid Path or Connection URL. ' + 
-          'Please check your settings to confirm that they are valid.');
-        
-        break;
-      case EOutputCode.ConnectFailed:
-        alert(
-          'Failed to connect to the streaming server. ' +
-          'Please check your internet connection. ');
-
-        break;
-      case EOutputCode.Disconnected:
-        alert(
-          'Disconnected from the streaming server. ' +
-          'Please check your internet connection. ');
-        
-        break;
-      case EOutputCode.InvalidStream:
-        alert(
-          'Could not access the specified channel or stream key, ' +
-          'please double-check your stream key. ' +
-          'If it is correct, there may be a problem connecting to the server.');
-
-        break;
-      case EOutputCode.NoSpace:
-        alert(
-          'There is not sufficient disk space to continue recording.');
-
-        break;
-      case EOutputCode.Unsupported:
-        alert(
-          'The output format is either unsupported or ' + 
-          'does not support more than one audio track. ' +
-          'Please check your settings and try again. ' +
-          `Internal error: ${errorText}`);
-
-        break;
-      case EOutputCode.Error:
-        alert(
-          'An unexpected error occurred when trying ' + 
-          `to connect to the server. Internal error: ${errorText}`);
-
-        break;
-      default:
-        alert('Unknown output code given, stream likely failed!');
+      alert(errorText);
     }
   }
 

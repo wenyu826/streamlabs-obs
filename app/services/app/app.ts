@@ -21,6 +21,7 @@ import { RecOutputService } from 'services/recording-output';
 import { RtmpOutputService } from 'services/rtmp-output';
 import { SettingsStorageService } from 'services/settings';
 import { Global, AudioFactory, VideoFactory } from 'services/obs-api';
+import { StreamingService } from '../streaming';
 
 interface IAppState {
   loading: boolean;
@@ -46,6 +47,7 @@ export class AppService extends StatefulService<IAppState> {
   @Inject() scenesService: ScenesService;
   @Inject() videoService: VideoService;
   @Inject() streamlabelsService: StreamlabelsService;
+  @Inject() streamingService: StreamingService;
   @Inject() private ipcServerService: IpcServerService;
   @Inject() private tcpServerService: TcpServerService;
   @Inject() private performanceMonitorService: PerformanceMonitorService;
@@ -97,6 +99,7 @@ export class AppService extends StatefulService<IAppState> {
       this.settingsStorageService.resetAudio();
       await this.recOutputService.initialize();
       await this.rtmpOutputService.initialize();
+      await this.streamingService.initialize();
       await this.sceneCollectionsService.initialize();
       handleSceneConfig();
     };

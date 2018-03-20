@@ -161,7 +161,7 @@ export class CustomizationService
         value: settings.enableFFZEmotes,
         name: 'enableFFZEmotes',
         description: 'Enable FrankerFaceZ emotes for Twitch',
-        type: 'OBS_PROPERTY_BOOL',
+        type: EPropertyType.Boolean,
         visible: true,
         enabled: true,
       }

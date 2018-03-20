@@ -2,7 +2,6 @@ import { Service } from '../service';
 import { StatefulService, mutation } from './../stateful-service';
 import { IPlatformService, IPlatformAuth, IChannelInfo, IGame } from '.';
 import { HostsService } from '../hosts';
-import { SettingsService } from '../settings';
 import { Inject } from '../../util/injector';
 import { handleErrors, requiresToken } from '../../util/requests';
 import { UserService } from '../user';
@@ -15,7 +14,6 @@ interface IMixerServiceState {
 export class MixerService extends StatefulService<IMixerServiceState> implements IPlatformService {
 
   @Inject() hostsService: HostsService;
-  @Inject() settingsService: SettingsService;
   @Inject() userService: UserService;
 
   authWindowOptions: Electron.BrowserWindowConstructorOptions = {
@@ -72,21 +70,7 @@ export class MixerService extends StatefulService<IMixerServiceState> implements
 
   setupStreamSettings(auth: IPlatformAuth) {
     this.fetchStreamKey().then(key => {
-      const settings = this.settingsService.getSettingsFormData('Stream');
-
-      settings.forEach(subCategory => {
-        subCategory.parameters.forEach(parameter => {
-          if (parameter.name === 'service') {
-            parameter.value = 'Mixer.com - FTL';
-          }
-
-          if (parameter.name === 'key') {
-            parameter.value = key;
-          }
-        });
-      });
-
-      this.settingsService.setSettings('Stream', settings);
+      // TODO FIXME
     });
   }
 

@@ -40,9 +40,9 @@
     </div>
     <div class="section-contect section-content--dropdown" v-if="!snappingCollapsed">
       <BoolInput v-model="snappingEnabled" />
-      <IntInput v-model="snappingSensitivity" />
-      <BoolInput v-model="snappingEdges" />
-      <BoolInput v-model="snappingSources" />
+      <IntInput v-model="snappingSensitivity" v-if="snappingEnabled.value" />
+      <BoolInput v-model="snappingEdges" v-if="snappingEnabled.value" />
+      <BoolInput v-model="snappingSources" v-if="snappingEnabled.value" />
     </div>
   </div>
 </div>
