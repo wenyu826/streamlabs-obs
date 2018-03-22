@@ -10,15 +10,13 @@ import { DefaultManager } from '../sources/properties-managers/default-manager';
 import { TFormData } from 'components/shared/forms/Input';
 import * as obs from '../obs-api';
 
-import PouchDB from 'pouchdb-core';
-import PouchDBWebSQL from 'pouchdb-adapter-node-websql';
-PouchDB.plugin(PouchDBWebSQL);
+import PouchDB from 'pouchdb';
 
 type TOutputServiceState = Dictionary<FOutput>;
 
 export class OutputService extends StatefulService<TOutputServiceState> {
   private initialized = false;
-  private db = new PouchDB('Outputs.sqlite3', { adapter: 'websql' });
+  private db = new PouchDB('Outputs.leveldb');
   private propManagers: Dictionary<PropertiesManager> = {};
   private putQueues: Dictionary<any[]> = {};
 
@@ -158,6 +156,17 @@ export class OutputService extends StatefulService<TOutputServiceState> {
     }).then((result: any) => { this.syncConfig(result); });
 
     this.initialized = true;
+  }
+
+  destroy() {
+    const keys = Object.keys(this.state);
+
+    for (let i = 0; i < keys.length; ++i) {
+      const obsObject = obs.OutputFactory.fromName(keys[i]);
+
+      if (obsObject)
+        obsObject.release();
+    }
   }
 
   @mutation()

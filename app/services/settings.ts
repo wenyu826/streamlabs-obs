@@ -7,8 +7,7 @@
  * meaning we can access settings in a typesafe way
  * to avoid typos and prevent not setting defaults. */
 
-import PouchDB from 'pouchdb-core';
-import PouchDBWebSQL from 'pouchdb-adapter-node-websql';
+import PouchDB from 'pouchdb';
 import { StatefulService, mutation } from 'services/stateful-service';
 import * as ObjectPath from 'object-path';
 
@@ -20,10 +19,9 @@ import {
   EScaleType,
   VideoFactory,
   AudioFactory,
-  ESpeakerLayout
+  ESpeakerLayout,
+  Global
 } from './obs-api';
-
-PouchDB.plugin(PouchDBWebSQL);
 
 /* Convenience constants */
 type SettingsDatabase = PouchDB.Database<ISettingsStorageState>;
@@ -31,7 +29,7 @@ type ExistingSettingsDocument = PouchDB.Core.ExistingDocument<
   ISettingsStorageState
 >;
 
-const settingsDocName = 'Settings';
+const docId = 'Settings';
 
 interface ISettingsState {
   General: {
@@ -64,8 +62,10 @@ interface ISettingsState {
   };
 
   Audio: {
-    SampleRate: number,
-    SpeakerLayout: number
+    SampleRate: number;
+    SpeakerLayout: number;
+    MonitoringDeviceName: string;
+    MonitoringDeviceId: string;
   };
 
   Video: {
@@ -90,8 +90,7 @@ interface ISettingsState {
 }
 
 interface ISettingsStorageState {
-  _id: string;
-  _rev?: string;
+  revision?: string;
 
   Settings: ISettingsState;
 }
@@ -112,12 +111,9 @@ export class SettingsStorageService extends StatefulService<
 > {
   private initialized = false;
   private putQueue: ISettingsStorageState[] = [];
-  private db: SettingsDatabase = new PouchDB('Settings.sqlite3', {
-    adapter: 'websql'
-  });
+  private db: SettingsDatabase = new PouchDB('Settings.leveldb');
 
   protected static initialState: ISettingsStorageState = {
-    _id: settingsDocName,
     Settings: {
       General: {
         KeepRecordingWhenStreamStops: false,
@@ -146,7 +142,9 @@ export class SettingsStorageService extends StatefulService<
       },
       Audio: {
         SampleRate: 44100,
-        SpeakerLayout: ESpeakerLayout.Stereo
+        SpeakerLayout: ESpeakerLayout.Stereo,
+        MonitoringDeviceName: 'Default',
+        MonitoringDeviceId: 'default'
       },
       Video: {
         BaseResolution: '1920x1080',
@@ -179,7 +177,7 @@ export class SettingsStorageService extends StatefulService<
       this.db
         .put({
           ...this.putQueue[0],
-          _id: response.id,
+          _id: docId,
           _rev: response.rev
         })
         .then(response => {
@@ -191,11 +189,13 @@ export class SettingsStorageService extends StatefulService<
   private queueChange(patch: Partial<ISettingsState>) {
     const change = {
       ...this.state,
-      ...patch
+      ...patch,
+      _id: docId,
+      _rev: this.state.revision
     };
 
     console.log(change);
-    
+
     if (this.putQueue.push(change) !== 1) {
       return;
     }
@@ -211,7 +211,7 @@ export class SettingsStorageService extends StatefulService<
 
   @mutation()
   UPDATE_REVISION(revision: string) {
-    this.state._rev = revision;
+    this.state.revision = revision;
   }
 
   @mutation()
@@ -240,6 +240,34 @@ export class SettingsStorageService extends StatefulService<
   }
 
   private syncConfig(response: ExistingSettingsDocument) {
+    const settings = response.Settings;
+    const topKeys = Object.keys(settings);
+
+    /* If we add new variables, we need to 
+     * detect missing values from the database
+     * and add them accordingly. */
+
+    /* We have no actual values in Settings, only objects.
+     * So all objects inside of Settings are called top keys here.
+     * All of the values inside of that object are called leaf keys.
+     */
+    for (let i = 0; i < topKeys.length; ++i) {
+      const topKey = topKeys[i];
+      const leafObject = settings[topKey];
+      const leafKeys = Object.keys(leafObject);
+
+      for (let k = 0; k < leafKeys.length; ++k) {
+        const leafKey = leafKeys[k];
+
+        if (leafObject[leafKey] !== undefined) {
+          continue;
+        }
+
+        leafObject[leafKey] =
+          SettingsStorageService.initialState.Settings[topKey][leafKey];
+      }
+    }
+
     this.UPDATE_SETTINGS(response.Settings);
     this.UPDATE_REVISION(response._rev);
   }
@@ -248,7 +276,7 @@ export class SettingsStorageService extends StatefulService<
     if (this.initialized) return;
 
     await this.db
-      .get(settingsDocName)
+      .get(docId)
       .then(response => {
         this.syncConfig(response);
       })
@@ -289,7 +317,9 @@ export class SettingsStorageService extends StatefulService<
   resetVideo() {
     const VideoSettings = this.state.Settings.Video;
     const baseRes = this.parseResolutionString(VideoSettings.BaseResolution);
-    const outputRes = this.parseResolutionString(VideoSettings.OutputResolution);
+    const outputRes = this.parseResolutionString(
+      VideoSettings.OutputResolution
+    );
     const fpsType = VideoSettings.FPSType;
     let fpsNum = 30;
     let fpsDen = 1;
@@ -334,6 +364,15 @@ export class SettingsStorageService extends StatefulService<
       samplesPerSec: AudioSettings.SampleRate,
       speakerLayout: AudioSettings.SpeakerLayout
     });
+  }
+
+  resetMonitoringDevice() {
+    const AudioSettings = this.state.Settings.Audio;
+
+    Global.setAudioMonitoringDevice(
+      AudioSettings.MonitoringDeviceName,
+      AudioSettings.MonitoringDeviceId
+    );
   }
 
   async destroy() {}

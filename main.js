@@ -269,11 +269,14 @@ function startApp() {
   }
 
   const workingDirectory =
-    path.join(app.getAppPath().replace('app.asar', 'app.asar.unpacked') + 
-              '/node_modules/obs-studio-node/libobs');
+    path.join(
+      app.getAppPath().replace('app.asar', 'app.asar.unpacked') + 
+      '/node_modules/obs-studio-node');
 
-  osn.Global.startup('en-US', workingDirectory);
+  osn.Global.startup('en-US', workingDirectory + '/libobs');
   osn.ModuleFactory.loadAll();
+
+  getObs().SetWorkingDirectory(workingDirectory);
 }
 
 // We use a special cache directory for running tests

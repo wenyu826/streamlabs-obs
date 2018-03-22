@@ -47,7 +47,7 @@ module.exports = {
     'socket.io-client': 'require("socket.io-client")',
     'rimraf': 'require("rimraf")',
     'backtrace-js': 'require("backtrace-js")',
-    'sqlite3': 'require("sqlite3")'
+    'leveldown': 'require("leveldown")'
   },
 
   module: {

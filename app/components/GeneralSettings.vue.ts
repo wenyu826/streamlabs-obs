@@ -162,4 +162,74 @@ export default class GeneralSettings extends Vue {
       }
     });
   }
+
+  outputPrefCollapsed = false;
+
+  get outputPrefWarnStartStream(): IFormInput<boolean> {
+    return {
+      value: this.settingsStorageService.state.Settings.General.WarnBeforeStartingStream,
+      name: 'warn_start_stream',
+      description: 'Show confirmation dialog when starting streams'
+    };
+  }
+
+  set outputPrefWarnStartStream(formData: IFormInput<boolean>) {
+    this.settingsStorageService.setSettings({
+      General: {
+        ...this.settingsStorageService.state.Settings.General,
+        WarnBeforeStartingStream: formData.value
+      }
+    });
+  }
+
+  get outputPrefWarnStopStream(): IFormInput<boolean> {
+    return {
+      value: this.settingsStorageService.state.Settings.General.WarnBeforeStoppingStream,
+      name: 'warn_stop_stream',
+      description: 'Show confirmation dialog when stopping streams'
+    };
+  }
+
+  set outputPrefWarnStopStream(formData: IFormInput<boolean>) {
+    this.settingsStorageService.setSettings({
+      General: {
+        ...this.settingsStorageService.state.Settings.General,
+        WarnBeforeStoppingStream: formData.value
+      }
+    });
+  }
+
+  get outputPrefAutoRecord(): IFormInput<boolean> {
+    return {
+      value: this.settingsStorageService.state.Settings.General.RecordWhenStreaming,
+      name: 'auto_record',
+      description: 'Automatically record when streaming'
+    };
+  }
+
+  set outputPrefAutoRecord(formData: IFormInput<boolean>) {
+    this.settingsStorageService.setSettings({
+      General: {
+        ...this.settingsStorageService.state.Settings.General,
+        RecordWhenStreaming: formData.value
+      }
+    });
+  }
+
+  get outputPrefRecordAfterStream(): IFormInput<boolean> {
+    return {
+      value: this.settingsStorageService.state.Settings.General.KeepRecordingWhenStreamStops,
+      name: 'auto_record',
+      description: 'Automatically record when streaming'
+    };
+  }
+
+  set outputPrefRecordAfterStream(formData: IFormInput<boolean>) {
+    this.settingsStorageService.setSettings({
+      General: {
+        ...this.settingsStorageService.state.Settings.General,
+        KeepRecordingWhenStreamStops: formData.value
+      }
+    });
+  }
 }

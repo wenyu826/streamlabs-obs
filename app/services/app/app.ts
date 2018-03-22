@@ -22,6 +22,10 @@ import { RtmpOutputService } from 'services/rtmp-output';
 import { SettingsStorageService } from 'services/settings';
 import { Global, AudioFactory, VideoFactory } from 'services/obs-api';
 import { StreamingService } from '../streaming';
+import { PerformanceService } from '../performance';
+import { OutputService } from '../outputs';
+import { EncoderService } from '../encoders';
+import { ProviderService } from '../providers';
 
 interface IAppState {
   loading: boolean;
@@ -48,9 +52,13 @@ export class AppService extends StatefulService<IAppState> {
   @Inject() videoService: VideoService;
   @Inject() streamlabelsService: StreamlabelsService;
   @Inject() streamingService: StreamingService;
+  @Inject() outputService: OutputService;
+  @Inject() encoderService: EncoderService;
+  @Inject() providerService: ProviderService;
   @Inject() private ipcServerService: IpcServerService;
   @Inject() private tcpServerService: TcpServerService;
   @Inject() private performanceMonitorService: PerformanceMonitorService;
+  @Inject() private performanceService: PerformanceService;
   @Inject() private fileManagerService: FileManagerService;
 
   static initialState: IAppState = {
@@ -97,10 +105,12 @@ export class AppService extends StatefulService<IAppState> {
       await this.settingsStorageService.initialize();
       this.settingsStorageService.resetVideo();
       this.settingsStorageService.resetAudio();
+      this.settingsStorageService.resetMonitoringDevice();
       await this.recOutputService.initialize();
       await this.rtmpOutputService.initialize();
       await this.streamingService.initialize();
       await this.sceneCollectionsService.initialize();
+      await this.performanceService.initialize();
       handleSceneConfig();
     };
 
@@ -127,6 +137,9 @@ export class AppService extends StatefulService<IAppState> {
       this.videoService.destroyAllDisplays();
       this.scenesTransitionsService.reset();
       await this.fileManagerService.flushAll();
+      this.outputService.destroy();
+      this.encoderService.destroy();
+      this.providerService.destroy();
       electron.ipcRenderer.send('shutdownComplete');
     }, 300);
   }

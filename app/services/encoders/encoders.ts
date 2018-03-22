@@ -5,8 +5,7 @@ import { TFormData, INumberInputValue } from 'components/shared/forms/Input';
 import { PropertiesManager } from 'services/sources/properties-managers/properties-manager';
 import { DefaultManager } from 'services/sources/properties-managers/default-manager';
 import Vue from 'vue';
-import PouchDB from 'pouchdb-core';
-import PouchDBWebSQL from 'pouchdb-adapter-node-websql';
+import PouchDB from 'pouchdb';
 import { 
   AudioEncoderFactory, 
   VideoEncoderFactory,
@@ -17,14 +16,12 @@ import {
   EListFormat
 } from 'services/obs-api';
 
-PouchDB.plugin(PouchDBWebSQL);
-
 type TEncoderServiceState = Dictionary<FEncoder>;
 
 export class EncoderService extends StatefulService<TEncoderServiceState> {
   private initialized = false;
   private propManagers: Dictionary<PropertiesManager> = {};
-  private db = new PouchDB('Encoders.sqlite3', { adapter: 'websql' });
+  private db = new PouchDB('Encoders.leveldb');
   private putQueues: Dictionary<any[]> = {};
 
 /* handleChange and queueChange might be abstracted away
@@ -129,6 +126,22 @@ export class EncoderService extends StatefulService<TEncoderServiceState> {
     this.initialized = true;
   }
 
+  destroy() {
+    const keys = Object.keys(this.state);
+
+    for (let i = 0; i < keys.length; ++i) {
+      let obsObject = null;
+      
+      if (this.state[keys[i]].isAudio)
+        obsObject = AudioEncoderFactory.fromName(keys[i]);
+      else
+        obsObject = VideoEncoderFactory.fromName(keys[i]);
+
+      if (obsObject)
+        obsObject.release();
+    }
+  }
+
   @mutation()
   UPDATE_REVISION(uniqueId: string, revision: string) {
     this.state[uniqueId].revision = revision;
@@ -227,7 +240,7 @@ export class EncoderService extends StatefulService<TEncoderServiceState> {
     if (encoder.isAudio)
       obsEncoder = AudioEncoderFactory.fromName(uniqueId);
     else 
-    obsEncoder = VideoEncoderFactory.fromName(uniqueId);
+      obsEncoder = VideoEncoderFactory.fromName(uniqueId);
 
     const settings = obsEncoder.settings;
     settings['bitrate'] = bitrate;

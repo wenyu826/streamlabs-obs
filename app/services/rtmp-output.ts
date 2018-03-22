@@ -4,9 +4,7 @@ import { FAudioEncoder, FVideoEncoder, EncoderService } from './encoders';
 import { StatefulService, mutation } from './stateful-service';
 import { Inject } from 'util/injector';
 
-import PouchDB from 'pouchdb-core';
-import PouchDBWebSQL from 'pouchdb-adapter-node-websql';
-PouchDB.plugin(PouchDBWebSQL);
+import PouchDB from 'pouchdb';
 
 export enum EProviderMode {
   Common,
@@ -18,12 +16,13 @@ export enum EEncoderMode {
   Advanced
 }
 
+const docId = 'rtmp-output-settings';
+
 /* A wrapper class that handles the global rtmp output 
  * and it's associated objects and state. */
 
 interface RtmpOutputServiceState {
   revision?: string;
-  _id: string;
   rtmpOutputId: string;
 
   /* Here we make two encoders. They have two
@@ -41,16 +40,14 @@ interface RtmpOutputServiceState {
   rtmpCustomProviderId: string;
 }
 
-type RtmpOutputDatabase = PouchDB.Database<RtmpOutputServiceState>;
 type ExistingDatabaseDocument = PouchDB.Core.ExistingDocument<RtmpOutputServiceState>;
 
 export class RtmpOutputService extends StatefulService<RtmpOutputServiceState> {
   private initialized = false;
-  private db: RtmpOutputDatabase = new PouchDB('RtmpOutputService.sqlite3', { adapter: 'websql' });
+  private db: PouchDB.Database<RtmpOutputServiceState> = new PouchDB('RtmpOutputService.leveldb');
   private putQueue: any[] = [];
 
   static initialState: RtmpOutputServiceState = {
-    _id: 'rtmp-output-settings',
     rtmpEncoderMode: EEncoderMode.Simple,
     rtmpOutputId: '',
     rtmpSimpleEncoderId: '',
@@ -164,7 +161,7 @@ export class RtmpOutputService extends StatefulService<RtmpOutputServiceState> {
     if (this.initialized) return;
     await this.outputService.initialize();
 
-    await this.db.get(RtmpOutputService.initialState._id)
+    await this.db.get(docId)
       .then((result: ExistingDatabaseDocument) => { this.syncConfig(result); })
       .catch((error: PouchDB.Core.Error) => { this.handleDbError(error); });
 
@@ -179,6 +176,7 @@ export class RtmpOutputService extends StatefulService<RtmpOutputServiceState> {
     if (this.putQueue.length > 0) {
       this.db.put({
         ... this.putQueue[0],
+        _id: docId,
         _rev: response.rev
       }).then((response) => { this.handleChange(response); });
     }
@@ -191,6 +189,7 @@ export class RtmpOutputService extends StatefulService<RtmpOutputServiceState> {
 
     this.db.put({
       ...this.state,
+      _id: docId,
       _rev: this.state.revision
     }).then((response) => { this.handleChange(response); });
   }

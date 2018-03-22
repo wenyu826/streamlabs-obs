@@ -45,6 +45,23 @@
       <BoolInput v-model="snappingSources" v-if="snappingEnabled.value" />
     </div>
   </div>
+
+  <!-- Output Prefences -->
+  <div class="section">
+    <div class="section-title--dropdown">
+      <h4 class="section-title" @click="outputPrefCollapsed = !outputPrefCollapsed">
+        <i class="fa fa-plus"  v-show="outputPrefCollapsed"></i>
+        <i class="fa fa-minus" v-show="!outputPrefCollapsed"></i>
+        Output
+      </h4>
+    </div>
+    <div class="section-contect section-content--dropdown" v-if="!outputPrefCollapsed">
+      <BoolInput v-model="outputPrefWarnStartStream" />
+      <BoolInput v-model="outputPrefWarnStopStream" />
+      <BoolInput v-model="outputPrefAutoRecord" />
+      <BoolInput v-model="outputPrefRecordAfterStream" />
+    </div>
+  </div>
 </div>
 </template>
 

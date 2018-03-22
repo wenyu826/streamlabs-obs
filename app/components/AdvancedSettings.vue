@@ -34,6 +34,9 @@
       </h4>
     </div>
     <div class="section-contect section-content--dropdown" v-if="!audioCollapsed">
+      <ListInput
+        v-model="monitoringDevicesForm"
+        @input="inputMonitoringDevices" />
     </div>
   </div>
 

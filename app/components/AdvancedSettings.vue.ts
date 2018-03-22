@@ -12,6 +12,7 @@ import { RtmpOutputService } from 'services/rtmp-output';
 import {
   IFormInput,
   IListInput,
+  IListOption,
   TFormData,
   INumberInputValue
 } from '../components/shared/forms/Input';
@@ -21,7 +22,8 @@ import {
   EVideoFormat,
   EColorSpace,
   ERangeType,
-  ENumberType
+  ENumberType,
+  Global
 } from 'services/obs-api';
 
 @Component({
@@ -74,6 +76,30 @@ export default class AdvancedSettings extends Vue {
       { value: ERangeType.Partial, description: 'Partial' }
     ]
   };
+
+  private buildMonitoringDeviceOptions(): IListOption<string>[] {
+    const monitoringDevices = Global.getAudioMonitoringDevices();
+
+    let options: IListOption<string>[] = [
+      { description: 'Default', value: 'default' }
+    ];
+
+    for (let i = 0; i < monitoringDevices.length; ++i) {
+      options.push({
+        value: monitoringDevices[i].id,
+        description: monitoringDevices[i].name
+      });
+    }
+
+    return options;
+  }
+
+  monitoringDevicesForm: IListInput<string> = {
+    value: this.settingsStorageService.state.Settings.Audio.MonitoringDeviceId,
+    name: 'monitoring_device',
+    description: 'Audio Monitoring Device',
+    options: this.buildMonitoringDeviceOptions()
+  }
 
   networkForm: TFormData = this.outputService.getPropertiesFormData(
     this.rtmpOutputService.getOutputId()
@@ -167,5 +193,32 @@ export default class AdvancedSettings extends Vue {
   inputStreamDelayTime(formData: INumberInputValue) {
     const outputId = this.rtmpOutputService.getOutputId();
     this.outputService.setDelay(outputId, formData.value);
+  }
+
+  inputMonitoringDevices(formData: IListInput<string>) {
+    /* Names can be duplicate but the id cannot be.
+     * That said, obs expects the id *and* name. 
+     * So we search the current options for the id
+     * and get the associated description which
+     * is the name we want. */
+    const options = formData.options;
+    let name;
+
+    for (let i = 0; i < options.length; ++i) {
+      if (options[i].value === formData.value) {
+        name = options[i].description;
+        break;
+      }
+    }
+
+    this.settingsStorageService.setSettings({
+      Audio: {
+        ...this.settingsStorageService.state.Settings.Audio,
+        MonitoringDeviceId: formData.value,
+        MonitoringDeviceName: name
+      }
+    });
+
+    this.settingsStorageService.resetMonitoringDevice();
   }
 }

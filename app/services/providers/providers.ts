@@ -7,15 +7,13 @@ import { TFormData } from 'components/shared/forms/Input';
 import * as obs from '../obs-api';
 import Vue from 'vue';
 
-import PouchDB from 'pouchdb-core';
-import PouchDBWebSQL from 'pouchdb-adapter-node-websql';
-PouchDB.plugin(PouchDBWebSQL);
+import PouchDB from 'pouchdb';
 
 type TProviderServiceState = Dictionary<FProvider>;
 
 export class ProviderService extends StatefulService<TProviderServiceState> {
   private initialized = false;
-  private db = new PouchDB('Providers.sqlite3', { adapter: 'websql' });
+  private db = new PouchDB('Providers.leveldb');
   private propManagers: Dictionary<DefaultManager> = {};
   private putQueues: Dictionary<any[]> = {};
 
@@ -120,6 +118,17 @@ export class ProviderService extends StatefulService<TProviderServiceState> {
     }).then((result: any) => { this.syncConfig(result); });
 
     this.initialized = true;
+  }
+  
+  destroy() {
+    const keys = Object.keys(this.state);
+
+    for (let i = 0; i < keys.length; ++i) {
+      const obsObject = obs.ServiceFactory.fromName(keys[i]);
+
+      if (obsObject)
+        obsObject.release();
+    }
   }
 
   @mutation()

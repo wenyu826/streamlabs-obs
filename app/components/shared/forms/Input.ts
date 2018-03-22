@@ -194,7 +194,8 @@ export function getPropertiesFormData(obsSource: obs.IConfigurable): TFormData {
     if (isTextProperty(obsProp)) {
       Object.assign(formItem as ITextInputValue, {
         subType: obsProp.details.type,
-        multiline: obsProp.details.type === obs.ETextType.Multiline
+        multiline: obsProp.details.type === obs.ETextType.Multiline,
+        masked: obsProp.details.type === obs.ETextType.Password
       });
     }
 
