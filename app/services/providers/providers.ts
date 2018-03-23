@@ -1,19 +1,19 @@
 import { FProvider } from './provider';
 import { StatefulService, mutation } from '../stateful-service';
-import { ipcRenderer } from 'electron';
+import { ipcRenderer, remote } from 'electron';
 import { getConfigFilePath } from '../config';
 import { DefaultManager } from '../sources/properties-managers/default-manager';
 import { TFormData } from 'components/shared/forms/Input';
 import * as obs from '../obs-api';
+import path from 'path';
 import Vue from 'vue';
-
 import PouchDB from 'pouchdb';
 
 type TProviderServiceState = Dictionary<FProvider>;
 
 export class ProviderService extends StatefulService<TProviderServiceState> {
   private initialized = false;
-  private db = new PouchDB('Providers.leveldb');
+  private db = new PouchDB(path.join(remote.app.getPath('userData'), 'Providers'));
   private propManagers: Dictionary<DefaultManager> = {};
   private putQueues: Dictionary<any[]> = {};
 

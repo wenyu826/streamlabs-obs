@@ -6764,9 +6764,9 @@ object.pick@^1.3.0:
   dependencies:
     isobject "^3.0.1"
 
-"obs-studio-node@https://ci.appveyor.com/api/buildjobs/mymx8qrecp622v7n/artifacts/streamlabs-x86_64-unsigned.tar.gz":
+"obs-studio-node@https://ci.appveyor.com/api/buildjobs/w4taq07p8u9wlmp9/artifacts/streamlabs-x86_64-unsigned.tar.gz":
   version "0.0.1"
-  resolved "https://ci.appveyor.com/api/buildjobs/mymx8qrecp622v7n/artifacts/streamlabs-x86_64-unsigned.tar.gz#00d98b3ae100e96558ce1f51b2bfa16d01251840"
+  resolved "https://ci.appveyor.com/api/buildjobs/w4taq07p8u9wlmp9/artifacts/streamlabs-x86_64-unsigned.tar.gz#7cb63eec2b5bd5c28454c7bfa10dabb55202db23"
 
 observable-to-promise@^0.5.0:
   version "0.5.0"

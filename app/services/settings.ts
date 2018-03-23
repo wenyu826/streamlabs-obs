@@ -10,7 +10,8 @@
 import PouchDB from 'pouchdb';
 import { StatefulService, mutation } from 'services/stateful-service';
 import * as ObjectPath from 'object-path';
-
+import { remote } from 'electron';
+import path from 'path';
 import {
   ISettings,
   EVideoFormat,
@@ -111,7 +112,8 @@ export class SettingsStorageService extends StatefulService<
 > {
   private initialized = false;
   private putQueue: ISettingsStorageState[] = [];
-  private db: SettingsDatabase = new PouchDB('Settings.leveldb');
+  private db: SettingsDatabase = 
+    new PouchDB(path.join(remote.app.getPath('userData'), 'Settings'));
 
   protected static initialState: ISettingsStorageState = {
     Settings: {

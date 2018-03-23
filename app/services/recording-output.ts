@@ -6,6 +6,7 @@ import { EProviderMode, EEncoderMode } from './rtmp-output';
 import { Inject } from 'util/injector';
 import PouchDB from 'pouchdb';
 import { remote } from 'electron';
+import path from 'path';
 import { OutputFactory } from 'services/obs-api';
 
 const app = remote.app;
@@ -39,7 +40,7 @@ type ExistingDatabaseDocument = PouchDB.Core.ExistingDocument<
 
 export class RecOutputService extends StatefulService<RecOutputServiceState> {
   private initialized = false;
-  private db = new PouchDB('RecOutputService.leveldb');
+  private db = new PouchDB(path.join(remote.app.getPath('userData'), 'RecOutputService'));
   private putQueue: any[] = [];
 
   static initialState: RecOutputServiceState = {

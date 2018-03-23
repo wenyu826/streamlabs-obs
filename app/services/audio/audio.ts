@@ -11,7 +11,9 @@ import { Inject } from '../../util/injector';
 import { InitAfter } from '../../util/service-observer';
 import { WindowsService } from '../windows';
 import {
-  IBitmaskInput, IFormInput, IListInput, INumberInputValue, TFormData,
+  IBitmaskInput, IFormInput,
+  IListInput, INumberInputValue,
+  TFormData, ECustomTypes
 } from '../../components/shared/forms/Input';
 import {
   IAudioDevice, IAudioServiceApi, IAudioSource, IAudioSourceApi, IAudioSourcesState, IFader,
@@ -291,8 +293,6 @@ export class AudioSource implements IAudioSourceApi {
   }
 
   getSettingsForm(): TFormData {
-    console.warn('FIXME TODO');
-
     return [
       <INumberInputValue>{
         name: 'deflection',
@@ -343,17 +343,16 @@ export class AudioSource implements IAudioSourceApi {
         ]
       },
 
-      // FIXME TODO
-      // <IBitmaskInput> {
-      //   value: this.audioMixers,
-      //   name: 'audioMixers',
-      //   description: 'Tracks',
-      //   showDescription: false,
-      //   type: 'OBS_PROPERTY_BITMASK',
-      //   visible: true,
-      //   enabled: true,
-      //   size: 6
-      // }
+      <IBitmaskInput> {
+        value: this.audioMixers,
+        name: 'audioMixers',
+        description: 'Tracks',
+        showDescription: false,
+        type: ECustomTypes.BitmaskInput,
+        visible: true,
+        enabled: true,
+        size: 6
+      }
     ];
   }
 

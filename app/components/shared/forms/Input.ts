@@ -28,7 +28,8 @@ export declare type TSubPropertyType =
 
 export enum ECustomTypes {
   /* We start at a thousand to avoid collision with obs types */
-  ResolutionInput = 1000
+  ResolutionInput = 1000,
+  BitmaskInput
 }
 
 /**

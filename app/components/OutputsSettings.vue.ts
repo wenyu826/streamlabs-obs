@@ -205,6 +205,8 @@ export default class OutputsSettings extends Vue {
 
   inputSimpleRtmpVideoEncoderType(formData: IListInput<string>) {
     this.rtmpOutputService.setVideoEncoderType(EEncoderMode.Simple, formData.value);
+    const videoEncoderId = this.rtmpOutputService.getVideoEncoderId();
+    this.encoderService.setBitrate(videoEncoderId, this.simpleRtmpVideoBitrateForm.value);
   }
 
   inputAdvRtmpVideoEncoderType(formData: IListInput<string>) {

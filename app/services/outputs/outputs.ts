@@ -1,7 +1,7 @@
 import Vue from 'vue';
 import { FOutput } from './output';
 import { StatefulService, mutation } from '../stateful-service';
-import { ipcRenderer } from 'electron';
+import { ipcRenderer, remote } from 'electron';
 import { EncoderService } from '../encoders';
 import { ProviderService } from '../providers';
 import { Inject } from '../../util/injector';
@@ -9,14 +9,14 @@ import { PropertiesManager } from '../sources/properties-managers/properties-man
 import { DefaultManager } from '../sources/properties-managers/default-manager';
 import { TFormData } from 'components/shared/forms/Input';
 import * as obs from '../obs-api';
-
+import path from 'path';
 import PouchDB from 'pouchdb';
 
 type TOutputServiceState = Dictionary<FOutput>;
 
 export class OutputService extends StatefulService<TOutputServiceState> {
   private initialized = false;
-  private db = new PouchDB('Outputs.leveldb');
+  private db = new PouchDB(path.join(remote.app.getPath('userData'), 'Outputs'));
   private propManagers: Dictionary<PropertiesManager> = {};
   private putQueues: Dictionary<any[]> = {};
 

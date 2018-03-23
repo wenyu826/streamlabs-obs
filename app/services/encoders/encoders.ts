@@ -1,13 +1,13 @@
 import { FAudioEncoder, FVideoEncoder, FEncoder } from './encoder';
 import { StatefulService, mutation } from 'services/stateful-service';
-import { ipcRenderer } from 'electron';
+import { ipcRenderer, remote } from 'electron';
 import { TFormData, INumberInputValue } from 'components/shared/forms/Input';
 import { PropertiesManager } from 'services/sources/properties-managers/properties-manager';
 import { DefaultManager } from 'services/sources/properties-managers/default-manager';
 import Vue from 'vue';
 import PouchDB from 'pouchdb';
-import { 
-  AudioEncoderFactory, 
+import {
+  AudioEncoderFactory,
   VideoEncoderFactory,
   VideoFactory,
   AudioFactory,
@@ -15,13 +15,15 @@ import {
   EPropertyType,
   EListFormat
 } from 'services/obs-api';
+import path from 'path';
 
 type TEncoderServiceState = Dictionary<FEncoder>;
 
 export class EncoderService extends StatefulService<TEncoderServiceState> {
   private initialized = false;
   private propManagers: Dictionary<PropertiesManager> = {};
-  private db = new PouchDB('Encoders.leveldb');
+  private db = 
+    new PouchDB(path.join(remote.app.getPath('userData'), 'Encoders'));
   private putQueues: Dictionary<any[]> = {};
 
 /* handleChange and queueChange might be abstracted away

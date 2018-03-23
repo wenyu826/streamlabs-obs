@@ -72,7 +72,7 @@
     "font-manager": "git+https://github.com/computerquip-streamlabs/font-manager.git",
     "node-fontinfo": "^0.0.2",
     "node-libuiohook": "file:./node-libuiohook",
-    "obs-studio-node": "https://ci.appveyor.com/api/buildjobs/mymx8qrecp622v7n/artifacts/streamlabs-x86_64-unsigned.tar.gz",
+    "obs-studio-node": "https://ci.appveyor.com/api/buildjobs/w4taq07p8u9wlmp9/artifacts/streamlabs-x86_64-unsigned.tar.gz",
     "pouchdb": "^6.4.3",
     "rimraf": "^2.6.1",
     "socket.io-client": "2.0.3",

@@ -3,8 +3,9 @@ import { FProvider, ProviderService } from './providers';
 import { FAudioEncoder, FVideoEncoder, EncoderService } from './encoders';
 import { StatefulService, mutation } from './stateful-service';
 import { Inject } from 'util/injector';
-
 import PouchDB from 'pouchdb';
+import { remote } from 'electron';
+import path from 'path';
 
 export enum EProviderMode {
   Common,
@@ -44,7 +45,10 @@ type ExistingDatabaseDocument = PouchDB.Core.ExistingDocument<RtmpOutputServiceS
 
 export class RtmpOutputService extends StatefulService<RtmpOutputServiceState> {
   private initialized = false;
-  private db: PouchDB.Database<RtmpOutputServiceState> = new PouchDB('RtmpOutputService.leveldb');
+
+  private db: PouchDB.Database<RtmpOutputServiceState> = 
+    new PouchDB(path.join(remote.app.getPath('userData'), 'RtmpOutputService'));
+
   private putQueue: any[] = [];
 
   static initialState: RtmpOutputServiceState = {
@@ -145,6 +149,8 @@ export class RtmpOutputService extends StatefulService<RtmpOutputServiceState> {
     this.UPDATE_OUTPUT(outputId);
 
     this.queueChange();
+    console.log('Created rtmp datbase yo');
+    console.log(this.state);
   }
 
   private syncConfig(result: ExistingDatabaseDocument): void {
@@ -155,6 +161,8 @@ export class RtmpOutputService extends StatefulService<RtmpOutputServiceState> {
     this.UPDATE_COMMON_PROVIDER(result.rtmpCommonProviderId);
     this.UPDATE_CUSTOM_PROVIDER(result.rtmpCustomProviderId);
     this.UPDATE_OUTPUT(result.rtmpOutputId);
+
+    console.log(this.state);
   }
 
   async initialize() {
@@ -265,7 +273,6 @@ export class RtmpOutputService extends StatefulService<RtmpOutputServiceState> {
     this.encoderService.removeVideoEncoder(encoderId);
     this.encoderService.addVideoEncoder(newEncoderId, newEncoder);
     this.outputService.setOutputVideoEncoder(this.state.rtmpOutputId, newEncoderId);
-
     this.queueChange();
   }
 

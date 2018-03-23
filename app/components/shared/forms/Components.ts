@@ -126,6 +126,8 @@ type: obs.EPropertyType | ECustomTypes, subType?: TSubPropertyType): typeof Vue 
       return componentFromText(subType);
     case ECustomTypes.ResolutionInput:
       return Components.ResolutionInput;
+    case ECustomTypes.BitmaskInput:
+      return Components.BitmaskInput;
   }
 
   console.warn(`Component for property type #${type} not found!`);
