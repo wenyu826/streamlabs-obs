@@ -1,10 +1,11 @@
-import { FOutput, OutputService } from './outputs';
-import { FProvider, ProviderService } from './providers';
-import { FAudioEncoder, FVideoEncoder, EncoderService } from './encoders';
+import { OutputService } from './outputs';
+import { ProviderService } from './providers';
+import { EncoderService } from './encoders';
 import { StatefulService, mutation } from './stateful-service';
 import { EProviderMode, EEncoderMode } from './rtmp-output';
 import { Inject } from 'util/injector';
 import PouchDB from 'pouchdb';
+import { DBQueueManager } from 'services/common-config';
 import { remote } from 'electron';
 import path from 'path';
 import { OutputFactory } from 'services/obs-api';
@@ -16,14 +17,13 @@ const docId = 'rec-output-settings';
 /* A wrapper class that handles the global rtmp output 
  * and it's associated objects and state. */
 
-interface RecOutputServiceState {
-  revision?: string;
+interface RecOutputContent {
   recOutputId: string;
 
   /* Here we make two encoders. They have two
    * separate and different sets of settings.
    * When the user changes from one to the other,
-   * it will keep the settings of the one he switched
+   * it will keep the settings of the one they switched
    * from, including the type of encoder. We simply,
    * won't use it until it's asked of us. */
   recSimpleEncoderId: string;
@@ -33,15 +33,17 @@ interface RecOutputServiceState {
   recFormat: string;
 }
 
-type RecOutputDatabase = PouchDB.Database<RecOutputServiceState>;
+interface RecOutputServiceState extends RecOutputContent {}
+
 type ExistingDatabaseDocument = PouchDB.Core.ExistingDocument<
   RecOutputServiceState
 >;
 
 export class RecOutputService extends StatefulService<RecOutputServiceState> {
   private initialized = false;
-  private db = new PouchDB(path.join(remote.app.getPath('userData'), 'RecOutputService'));
-  private putQueue: any[] = [];
+  private db = new DBQueueManager<RecOutputContent>(
+    path.join(remote.app.getPath('userData'), 'RecOutputService')
+  );
 
   static initialState: RecOutputServiceState = {
     recEncoderMode: EEncoderMode.Simple,
@@ -55,11 +57,6 @@ export class RecOutputService extends StatefulService<RecOutputServiceState> {
   @Inject() outputService: OutputService;
   @Inject() providerService: ProviderService;
   @Inject() encoderService: EncoderService;
-
-  @mutation()
-  UPDATE_REVISION(revision: string) {
-    this.state.revision = revision;
-  }
 
   @mutation()
   UPDATE_ENCODER_MODE(mode: EEncoderMode) {
@@ -91,30 +88,18 @@ export class RecOutputService extends StatefulService<RecOutputServiceState> {
     this.state.recFormat = format;
   }
 
-  private handleDbError(error: PouchDB.Core.Error): void {
-    /* A 404 is normal on a cold start */
-    if (error.status !== 404) {
-      throw Error(
-        `Problem with rtmp-output configuration document: ${error.message}`
-      );
-    }
-
+  private createConfig(): void {
     const outputId = OutputService.getUniqueId();
-    const fOutput = new FOutput('ffmpeg_muxer', outputId);
-    const audioEncoderId = EncoderService.getUniqueId();
-    const audioEncoder = new FAudioEncoder('mf_aac', audioEncoderId);
-    const videoEncoderId = EncoderService.getUniqueId();
-    const videoEncoder = new FVideoEncoder('obs_x264', videoEncoderId);
-    const advVideoEncoderId = EncoderService.getUniqueId();
-    const advVideoEncoder = new FVideoEncoder(
-      'obs_x264',
-      advVideoEncoderId
-    );
+    this.outputService.addOutput('ffmpeg_muxer', outputId);
 
-    this.encoderService.addAudioEncoder(audioEncoderId, audioEncoder);
-    this.encoderService.addVideoEncoder(advVideoEncoderId, advVideoEncoder);
-    this.encoderService.addVideoEncoder(videoEncoderId, videoEncoder);
-    this.outputService.addOutput(outputId, fOutput);
+    const audioEncoderId = EncoderService.getUniqueId();
+    this.encoderService.addAudioEncoder('mf_aac', audioEncoderId);
+
+    const videoEncoderId = EncoderService.getUniqueId();
+    this.encoderService.addVideoEncoder('obs_x264', videoEncoderId);
+
+    const advVideoEncoderId = EncoderService.getUniqueId();
+    this.encoderService.addVideoEncoder('obs_x264', advVideoEncoderId);
 
     this.outputService.setOutputVideoEncoder(outputId, videoEncoderId);
     this.outputService.setOutputAudioEncoder(outputId, audioEncoderId, 0);
@@ -124,67 +109,47 @@ export class RecOutputService extends StatefulService<RecOutputServiceState> {
     this.UPDATE_OUTPUT(outputId);
     this.UPDATE_REC_DIR(app.getPath('videos'));
 
+    this.db.addQueue(docId);
     this.queueChange();
   }
 
-  private syncConfig(result: ExistingDatabaseDocument) {
-    this.UPDATE_REVISION(result._rev);
-    this.UPDATE_ENCODER_MODE(result.recEncoderMode);
-    this.UPDATE_ADV_ENC(result.recAdvEncoderId);
-    this.UPDATE_SIMPLE_ENC(result.recSimpleEncoderId);
-    this.UPDATE_OUTPUT(result.recOutputId);
-    this.UPDATE_REC_DIR(result.recDirectory);
-    this.UPDATE_REC_FORMAT(result.recFormat);
+  private syncConfig(response: PouchDB.Core.AllDocsResponse<RecOutputContent>) {
+    for (let i = 0; i < response.total_rows; ++i) {
+      const result = response.rows[i].doc;
+
+      if (result._id !== docId) {
+        console.warn('Unknown document found in recording output database!');
+        continue;
+      }
+
+      this.UPDATE_ENCODER_MODE(result.recEncoderMode);
+      this.UPDATE_ADV_ENC(result.recAdvEncoderId);
+      this.UPDATE_SIMPLE_ENC(result.recSimpleEncoderId);
+      this.UPDATE_OUTPUT(result.recOutputId);
+      this.UPDATE_REC_DIR(result.recDirectory);
+      this.UPDATE_REC_FORMAT(result.recFormat);
+
+      this.initialized = true;
+    }
+
+    if (!this.initialized) {
+      this.createConfig();
+      this.initialized = true;
+    }
   }
 
   async initialize() {
     if (this.initialized) return;
     await this.outputService.initialize();
-
-    await this.db
-      .get(docId)
-      .then((result: ExistingDatabaseDocument) => {
-        this.syncConfig(result);
-      })
-      .catch((error: PouchDB.Core.Error) => {
-        this.handleDbError(error);
-      });
-
-    this.initialized = true;
-  }
-
-  private async handleChange(response: PouchDB.Core.Response) {
-    this.UPDATE_REVISION(response.rev);
-
-    this.putQueue.shift();
-
-    if (this.putQueue.length > 0) {
-      this.db
-        .put({
-          ...this.putQueue[0],
-          _id: docId,
-          _rev: response.rev
-        })
-        .then(response => {
-          this.handleChange(response);
-        });
-    }
+    await this.db.initialize(response => this.syncConfig(response));
   }
 
   private queueChange() {
-    if (this.putQueue.push({ ...this.state }) !== 1) {
-      return;
-    }
+    const change = {
+      ...this.state
+    };
 
-    this.db
-      .put({
-        ...this.state,
-        _id: docId,
-        _rev: this.state.revision
-      })
-      .then(response => {
-        this.handleChange(response);
-      });
+    this.db.queueChange(docId, change);
   }
 
   private generateFilename(): string {
@@ -201,18 +166,11 @@ export class RecOutputService extends StatefulService<RecOutputServiceState> {
       this.state.recFormat
     }`;
     this.outputService.update(this.state.recOutputId, { path });
-
-    console.log(`Starting recording with path ${path}`);
-
     this.outputService.startOutput(this.state.recOutputId);
   }
 
   stop() {
     this.outputService.stopOutput(this.state.recOutputId);
-  }
-
-  isActive(): boolean {
-    return this.outputService.isOutputActive(this.state.recOutputId);
   }
 
   getAudioEncoderId(): string {
@@ -258,7 +216,6 @@ export class RecOutputService extends StatefulService<RecOutputServiceState> {
   setVideoEncoderType(mode: EEncoderMode, type: string) {
     let encoderId = null;
     const newEncoderId = EncoderService.getUniqueId();
-    const newEncoder = new FVideoEncoder(type, newEncoderId);
 
     switch (mode) {
       case EEncoderMode.Advanced:
@@ -272,7 +229,7 @@ export class RecOutputService extends StatefulService<RecOutputServiceState> {
     }
 
     this.encoderService.removeVideoEncoder(encoderId);
-    this.encoderService.addVideoEncoder(newEncoderId, newEncoder);
+    this.encoderService.addVideoEncoder(type, newEncoderId);
     this.outputService.setOutputVideoEncoder(
       this.state.recOutputId,
       newEncoderId
@@ -288,7 +245,7 @@ export class RecOutputService extends StatefulService<RecOutputServiceState> {
     this.outputService.update(this.state.recOutputId, patch);
   }
 
-  getFileDirectory(): string {
+  getFileDirectory() {
     /* We know this setting exists since we create the output with a default */
     return this.state.recDirectory;
   }

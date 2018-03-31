@@ -8,6 +8,7 @@
  * to avoid typos and prevent not setting defaults. */
 
 import PouchDB from 'pouchdb';
+import { DBQueueManager } from 'services/common-config';
 import { StatefulService, mutation } from 'services/stateful-service';
 import * as ObjectPath from 'object-path';
 import { remote } from 'electron';
@@ -24,77 +25,83 @@ import {
   Global
 } from './obs-api';
 
-/* Convenience constants */
-type SettingsDatabase = PouchDB.Database<ISettingsStorageState>;
-type ExistingSettingsDocument = PouchDB.Core.ExistingDocument<
-  ISettingsStorageState
->;
-
-const docId = 'Settings';
-
-interface ISettingsState {
-  General: {
-    KeepRecordingWhenStreamStops: boolean;
-    RecordWhenStreaming: boolean;
-    WarnBeforeStartingStream: boolean;
-    WarnBeforeStoppingStream: boolean;
-    SnappingEnabled: boolean;
-    SnapDistance: number;
-    ScreenSnapping: boolean;
-    SourceSnapping: boolean;
-    CenterSnapping: boolean;
-  };
-
-  TCP: {
-    Enabled: boolean;
-    AllowRemote: boolean;
-    Port: number;
-  };
-
-  NamedPipe: {
-    Enabled: boolean;
-    PipeName: string;
-  };
-
-  WebSockets: {
-    Enabled: boolean;
-    AllowRemote: boolean;
-    Port: number;
-  };
-
-  Audio: {
-    SampleRate: number;
-    SpeakerLayout: number;
-    MonitoringDeviceName: string;
-    MonitoringDeviceId: string;
-  };
-
-  Video: {
-    BaseResolution: string;
-    OutputResolution: string;
-    DownscaleFilter: number;
-    ColorFormat: number;
-    ColorSpace: number;
-    ColorRange: number;
-    FPSType: number;
-    FPSCommon: number;
-    FPSInt: number;
-    FPSNum: number;
-    FPSDen: number;
-  };
-
-  Delay: {
-    Enabled: boolean;
-    ReconnectPreserve: boolean;
-    Seconds: number;
-  };
+export enum ESettingsType {
+  General = 'General',
+  TCP = 'TCP',
+  NamedPipe = 'NamedPipe',
+  WebSockets = 'WebSockets',
+  Audio = 'Audio',
+  Video = 'Video',
+  Delay = 'Delay'
 }
 
-interface ISettingsStorageState {
-  revision?: string;
-
-  Settings: ISettingsState;
+interface IGeneralSettings {
+  KeepRecordingWhenStreamStops: boolean;
+  RecordWhenStreaming: boolean;
+  WarnBeforeStartingStream: boolean;
+  WarnBeforeStoppingStream: boolean;
+  SnappingEnabled: boolean;
+  SnapDistance: number;
+  ScreenSnapping: boolean;
+  SourceSnapping: boolean;
+  CenterSnapping: boolean;
 }
+
+interface ITCPSettings {
+  Enabled: boolean;
+  AllowRemote: boolean;
+  Port: number;
+}
+
+interface INamedPipeSettings {
+  Enabled: boolean;
+  PipeName: string;
+}
+
+interface IWebSocketsSettings {
+  Enabled: boolean;
+  AllowRemote: boolean;
+  Port: number;
+}
+
+interface IAudioSettings {
+  SampleRate: number;
+  SpeakerLayout: number;
+  MonitoringDeviceName: string;
+  MonitoringDeviceId: string;
+}
+
+interface IVideoSettings {
+  BaseResolution: string;
+  OutputResolution: string;
+  DownscaleFilter: number;
+  ColorFormat: number;
+  ColorSpace: number;
+  ColorRange: number;
+  FPSType: number;
+  FPSCommon: number;
+  FPSInt: number;
+  FPSNum: number;
+  FPSDen: number;
+}
+
+interface IDelaySettings {
+  Enabled: boolean;
+  ReconnectPreserve: boolean;
+  Seconds: number;
+}
+
+interface ISettingsStorageContent {
+  General: IGeneralSettings;
+  TCP: ITCPSettings;
+  NamedPipe: INamedPipeSettings;
+  WebSockets: IWebSocketsSettings;
+  Audio: IAudioSettings;
+  Video: IVideoSettings;
+  Delay: IDelaySettings;
+}
+
+interface ISettingsStorageState extends ISettingsStorageContent {}
 
 export interface IResolution {
   width: number;
@@ -112,187 +119,180 @@ export class SettingsStorageService extends StatefulService<
 > {
   private initialized = false;
   private putQueue: ISettingsStorageState[] = [];
-  private db: SettingsDatabase = 
-    new PouchDB(path.join(remote.app.getPath('userData'), 'Settings'));
+  private db = new DBQueueManager(
+    path.join(remote.app.getPath('userData'), 'Settings')
+  );
 
   protected static initialState: ISettingsStorageState = {
-    Settings: {
-      General: {
-        KeepRecordingWhenStreamStops: false,
-        RecordWhenStreaming: false,
-        WarnBeforeStartingStream: true,
-        WarnBeforeStoppingStream: false,
-        SnappingEnabled: true,
-        SnapDistance: 10,
-        ScreenSnapping: true,
-        SourceSnapping: true,
-        CenterSnapping: false
-      },
-      TCP: {
-        Enabled: false,
-        AllowRemote: false,
-        Port: 59651
-      },
-      NamedPipe: {
-        Enabled: true,
-        PipeName: 'slobs'
-      },
-      WebSockets: {
-        Enabled: false,
-        AllowRemote: false,
-        Port: 59650
-      },
-      Audio: {
-        SampleRate: 44100,
-        SpeakerLayout: ESpeakerLayout.Stereo,
-        MonitoringDeviceName: 'Default',
-        MonitoringDeviceId: 'default'
-      },
-      Video: {
-        BaseResolution: '1920x1080',
-        OutputResolution: '1280x720',
-        ColorFormat: EVideoFormat.NV12,
-        ColorSpace: EColorSpace.CS601,
-        ColorRange: ERangeType.Partial,
-        DownscaleFilter: EScaleType.Bilinear,
-        FPSType: 0 /* Common FPS Values */,
-        FPSCommon: 4 /* 30 FPS */,
-        FPSInt: 30,
-        FPSNum: 30,
-        FPSDen: 1
-      },
-      Delay: {
-        Enabled: false,
-        ReconnectPreserve: false,
-        Seconds: 10
-      }
+    General: {
+      KeepRecordingWhenStreamStops: false,
+      RecordWhenStreaming: false,
+      WarnBeforeStartingStream: true,
+      WarnBeforeStoppingStream: false,
+      SnappingEnabled: true,
+      SnapDistance: 10,
+      ScreenSnapping: true,
+      SourceSnapping: true,
+      CenterSnapping: false
+    },
+    TCP: {
+      Enabled: false,
+      AllowRemote: false,
+      Port: 59651
+    },
+    NamedPipe: {
+      Enabled: true,
+      PipeName: 'slobs'
+    },
+    WebSockets: {
+      Enabled: false,
+      AllowRemote: false,
+      Port: 59650
+    },
+    Audio: {
+      SampleRate: 44100,
+      SpeakerLayout: ESpeakerLayout.Stereo,
+      MonitoringDeviceName: 'Default',
+      MonitoringDeviceId: 'default'
+    },
+    Video: {
+      BaseResolution: '1920x1080',
+      OutputResolution: '1280x720',
+      ColorFormat: EVideoFormat.NV12,
+      ColorSpace: EColorSpace.CS601,
+      ColorRange: ERangeType.Partial,
+      DownscaleFilter: EScaleType.Bilinear,
+      FPSType: 0 /* Common FPS Values */,
+      FPSCommon: 4 /* 30 FPS */,
+      FPSInt: 30,
+      FPSNum: 30,
+      FPSDen: 1
+    },
+    Delay: {
+      Enabled: false,
+      ReconnectPreserve: false,
+      Seconds: 10
     }
   };
 
-  private handleChange(response: PouchDB.Core.Response) {
-    this.putQueue.shift();
+  /* A bit unsafe but not user facing */
+  private queueChange(type: ESettingsType, patch: any) {
+    const change = Object.assign({}, this.state[type], patch);
 
-    this.UPDATE_REVISION(response.rev);
-    console.log(response);
-
-    if (this.putQueue.length > 0) {
-      this.db
-        .put({
-          ...this.putQueue[0],
-          _id: docId,
-          _rev: response.rev
-        })
-        .then(response => {
-          this.handleChange(response);
-        });
-    }
+    this.db.queueChange(type, change);
   }
 
-  private queueChange(patch: Partial<ISettingsState>) {
-    const change = {
-      ...this.state,
-      ...patch,
-      _id: docId,
-      _rev: this.state.revision
-    };
-
-    console.log(change);
-
-    if (this.putQueue.push(change) !== 1) {
-      return;
-    }
-
-    this.db.put(change).then(response => {
-      this.handleChange(response);
-    });
+  setGeneralSettings(patch: Partial<IGeneralSettings>) {
+    this.UPDATE_SETTINGS(ESettingsType.General, patch);
+    this.queueChange(ESettingsType.General, patch);
   }
 
-  setSettings(patch: Partial<ISettingsState>) {
-    this.UPDATE_SETTINGS(patch);
+  setTcpSettings(patch: Partial<ITCPSettings>) {
+    this.UPDATE_SETTINGS(ESettingsType.TCP, patch);
+    this.queueChange(ESettingsType.TCP, patch);
   }
 
-  @mutation()
-  UPDATE_REVISION(revision: string) {
-    this.state.revision = revision;
+  setNamedPipeSettings(patch: Partial<INamedPipeSettings>) {
+    this.UPDATE_SETTINGS(ESettingsType.NamedPipe, patch);
+    this.queueChange(ESettingsType.NamedPipe, patch);
+  }
+
+  setWebSocketsSettings(patch: Partial<IWebSocketsSettings>) {
+    this.UPDATE_SETTINGS(ESettingsType.WebSockets, patch);
+    this.queueChange(ESettingsType.WebSockets, patch);
+  }
+
+  setAudioSettings(patch: Partial<IAudioSettings>) {
+    this.UPDATE_SETTINGS(ESettingsType.Audio, patch);
+    this.queueChange(ESettingsType.Audio, patch);
+  }
+
+  setVideoSettings(patch: Partial<IVideoSettings>) {
+    this.UPDATE_SETTINGS(ESettingsType.Video, patch);
+    this.queueChange(ESettingsType.Video, patch);
+  }
+
+  setDelaySettings(patch: Partial<IDelaySettings>) {
+    this.UPDATE_SETTINGS(ESettingsType.Delay, patch);
+    this.queueChange(ESettingsType.Delay, patch);
   }
 
   @mutation()
-  UPDATE_SETTINGS(patch: Partial<ISettingsState>) {
-    this.state.Settings = { ...this.state.Settings, ...patch };
+  UPDATE_SETTINGS(type: ESettingsType, patch: any) {
+    this.state[type] = { ...this.state[type], ...patch };
   }
 
-  init() {
-    this.store.watch(
-      () => {
-        return this.state.Settings;
-      },
-      changed => {
-        this.queueChange(changed);
-      }
-    );
+  private createConfig() {
+    for (const key in ESettingsType) {
+      const type: ESettingsType = ESettingsType[key] as ESettingsType;
+      this.queueChange(type, SettingsStorageService.initialState[type]);
+    }
   }
 
-  private handleDbError(error: PouchDB.Core.Error) {
-    if (error.status !== 404) {
-      console.log(error);
-      throw Error(`Error occured with settings document: ${error.message}`);
+  private syncConfig(response: PouchDB.Core.AllDocsResponse<{}>) {
+    const initialized = {};
+
+    for (const key in ESettingsType) {
+      initialized[key] = false;
     }
 
-    this.queueChange(this.state.Settings);
-  }
+    for (let i = 0; i < response.total_rows; ++i) {
+      const entry = Object.assign({}, response.rows[i].doc);
+      const type = response.rows[i].doc._id as ESettingsType;
 
-  private syncConfig(response: ExistingSettingsDocument) {
-    const settings = response.Settings;
-    const topKeys = Object.keys(settings);
+      /* Remove these to prevent them from being put into state */
+      delete entry._id;
+      delete entry._rev;
 
-    /* If we add new variables, we need to 
-     * detect missing values from the database
-     * and add them accordingly. */
+      /* If we add new fields, we want to make sure
+         they get added to the already created database */
+      const initialKeys = Object.keys(
+        SettingsStorageService.initialState[type]
+      );
 
-    /* We have no actual values in Settings, only objects.
-     * So all objects inside of Settings are called top keys here.
-     * All of the values inside of that object are called leaf keys.
-     */
-    for (let i = 0; i < topKeys.length; ++i) {
-      const topKey = topKeys[i];
-      const leafObject = settings[topKey];
-      const leafKeys = Object.keys(leafObject);
+      let changed = false;
 
-      for (let k = 0; k < leafKeys.length; ++k) {
-        const leafKey = leafKeys[k];
+      for (let k = 0; k < initialKeys.length; ++k) {
+        const key = initialKeys[k];
+        if (entry[key] !== undefined) continue;
 
-        if (leafObject[leafKey] !== undefined) {
-          continue;
-        }
+        console.warn(`${key} in settings not found!`);
 
-        leafObject[leafKey] =
-          SettingsStorageService.initialState.Settings[topKey][leafKey];
+        changed = true;
+        entry[key] = SettingsStorageService.initialState[type][key];
       }
+
+      this.UPDATE_SETTINGS(type, entry);
+      if (changed) this.queueChange(type, entry);
+
+      initialized[type] = true;
     }
 
-    this.UPDATE_SETTINGS(response.Settings);
-    this.UPDATE_REVISION(response._rev);
+    /* If our key doesn't exist at all, create it */
+    for (const key in initialized) {
+      const type = key as ESettingsType;
+      const change = SettingsStorageService.initialState[key];
+
+      if (initialized[key] === false) {
+        this.UPDATE_SETTINGS(type, change);
+        this.db.addQueue(type);
+        this.queueChange(type, change);
+      }
+    }
   }
 
   async initialize() {
     if (this.initialized) return;
 
-    await this.db
-      .get(docId)
-      .then(response => {
-        this.syncConfig(response);
-      })
-      .catch(error => {
-        this.handleDbError(error);
-      });
+    await this.db.initialize(response => this.syncConfig(response));
 
     this.initialized = true;
   }
 
   /* This isn't quite as failsafe as what's in the resolution
-     * input component itself as it's already been parsed once
-     * It's practical to assume it's always going to have the format
-     * of `1234x1234`. */
+   * input component itself as it's already been parsed once.
+   * It's practical to assume it's always going to have the format
+   * of `1234x1234`. */
   public parseResolutionString(res: string): IResolution {
     const [widthStr, heightStr] = res.split('x');
     const width = parseInt(widthStr, 10);
@@ -317,7 +317,7 @@ export class SettingsStorageService extends StatefulService<
   ];
 
   resetVideo() {
-    const VideoSettings = this.state.Settings.Video;
+    const VideoSettings = this.state.Video;
     const baseRes = this.parseResolutionString(VideoSettings.BaseResolution);
     const outputRes = this.parseResolutionString(
       VideoSettings.OutputResolution
@@ -360,7 +360,7 @@ export class SettingsStorageService extends StatefulService<
   }
 
   resetAudio() {
-    const AudioSettings = this.state.Settings.Audio;
+    const AudioSettings = this.state.Audio;
 
     AudioFactory.reset({
       samplesPerSec: AudioSettings.SampleRate,
@@ -369,7 +369,7 @@ export class SettingsStorageService extends StatefulService<
   }
 
   resetMonitoringDevice() {
-    const AudioSettings = this.state.Settings.Audio;
+    const AudioSettings = this.state.Audio;
 
     Global.setAudioMonitoringDevice(
       AudioSettings.MonitoringDeviceName,

@@ -1,7 +1,7 @@
 import Vue from 'vue';
 import { Component } from 'vue-property-decorator';
 import { Inject } from '../util/injector';
-import GenericFormGroups from './shared/forms/GenericFormGroups.vue';
+import GenericForm from './shared/forms/GenericForm.vue';
 import { TFormData, TObsValue, IListInput } from './shared/forms/Input';
 import { AudioService, E_AUDIO_CHANNELS } from 'services/audio';
 import { SourcesService, TSourceType } from 'services/sources';
@@ -14,7 +14,7 @@ interface AudioLayout {
 }
 
 @Component({
-    components: { GenericFormGroups }
+    components: { GenericForm }
 })
 
 export default class AudioSettings extends Vue {

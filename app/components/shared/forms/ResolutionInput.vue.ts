@@ -1,45 +1,54 @@
 import { Component, Prop } from 'vue-property-decorator';
 import { IListInput, IListOption, Input, TObsValue } from './Input';
 import { Multiselect } from 'vue-multiselect';
+import Vue from 'vue';
 
 @Component({
   components: { Multiselect }
 })
 
-class ResolutionInput extends Input<IListInput<TObsValue>> {
+class ResolutionInput extends Vue {
 
   @Prop()
-  value: IListInput<TObsValue>;
+  value: string;
 
+  @Prop({ default: true })
+  showDescription: boolean;
+
+  @Prop()
+  description: string;
+
+  @Prop({ default: false })
+  disabled: boolean;
 
   @Prop({ default: 'Select Option or Type New Value' })
   placeholder: string;
 
+  @Prop()
+  options: IListOption<string>[];
 
   onInputHandler(option: IListOption<string>) {
-    this.emitInput({ ...this.value, value: option.value });
+    this.$emit('input', option);
   }
 
   onSearchChange(value: string) {
     this.$emit('search-change', value);
   }
 
-
-  get currentValue() {
-
-    let option = this.value.options.find((opt: IListOption<string>) => {
-      return this.value.value === opt.value;
+  findOption(value: string) {
+    let option = this.options.find((opt: IListOption<string>) => {
+      return this.value === opt.value;
     });
 
     if (option) return option;
 
-    if (this.value.value) {
-      option = { value: this.value.value, description: this.value.value } as IListOption<string>;
-      this.value.options.push(option);
+    if (this.value) {
+      option = { value: this.value, description: this.value };
+      this.options.push(option);
       return option;
     }
 
-    return this.value.options[0];
+    return null;
   }
 
   getCustomResolution(search: string) {

@@ -80,11 +80,11 @@ class DragHandler {
   // display: The OBS display object we are operating on
   constructor(startEvent: MouseEvent, display: Display) {
     // Load some settings we care about
-    this.snapEnabled = this.settingsStorageService.state.Settings.General.SnappingEnabled;
-    this.renderedSnapDistance = this.settingsStorageService.state.Settings.General.SnapDistance;
-    this.screenSnapping = this.settingsStorageService.state.Settings.General.ScreenSnapping;
-    this.sourceSnapping = this.settingsStorageService.state.Settings.General.SourceSnapping;
-    this.centerSnapping = this.settingsStorageService.state.Settings.General.CenterSnapping;
+    this.snapEnabled = this.settingsStorageService.state.General.SnappingEnabled;
+    this.renderedSnapDistance = this.settingsStorageService.state.General.SnapDistance;
+    this.screenSnapping = this.settingsStorageService.state.General.ScreenSnapping;
+    this.sourceSnapping = this.settingsStorageService.state.General.SourceSnapping;
+    this.centerSnapping = this.settingsStorageService.state.General.CenterSnapping;
 
     // Load some attributes about the video canvas
     this.baseWidth = this.videoService.baseWidth;

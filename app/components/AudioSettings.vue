@@ -1,7 +1,7 @@
 <template>
 <div>
    <div class="section">
-    <GenericFormGroups
+    <GenericForm
       v-model="settingsFormData"
     />
   </div>

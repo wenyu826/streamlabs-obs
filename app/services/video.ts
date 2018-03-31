@@ -188,7 +188,7 @@ export class VideoService extends Service {
   }
 
   get baseResolution() {
-    const res = this.settingsStorageService.state.Settings.Video.BaseResolution;
+    const res = this.settingsStorageService.state.Video.BaseResolution;
     return this.settingsStorageService.parseResolutionString(res);
   }
 

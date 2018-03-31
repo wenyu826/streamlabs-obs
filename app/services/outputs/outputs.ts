@@ -1,5 +1,4 @@
 import Vue from 'vue';
-import { FOutput } from './output';
 import { StatefulService, mutation } from '../stateful-service';
 import { ipcRenderer, remote } from 'electron';
 import { EncoderService } from '../encoders';
@@ -7,96 +6,85 @@ import { ProviderService } from '../providers';
 import { Inject } from '../../util/injector';
 import { PropertiesManager } from '../sources/properties-managers/properties-manager';
 import { DefaultManager } from '../sources/properties-managers/default-manager';
-import { TFormData } from 'components/shared/forms/Input';
-import * as obs from '../obs-api';
+import { DBQueueManager } from 'services/common-config';
+import {
+  TFormData,
+  setupConfigurableDefaults
+} from 'components/shared/forms/Input';
 import path from 'path';
 import PouchDB from 'pouchdb';
+import {
+  ISettings,
+  IService,
+  IOutput,
+  OutputFactory,
+  VideoEncoderFactory,
+  AudioEncoderFactory,
+  ServiceFactory,
+  VideoFactory,
+  AudioFactory
+} from 'services/obs-api';
 
-type TOutputServiceState = Dictionary<FOutput>;
+type TOutputServiceState = Dictionary<IFOutput>;
+
+interface IOutputContent {
+  type: string;
+  settings: ISettings;
+
+  audioEncoder: string;
+  videoEncoder: string;
+  provider: string;
+
+  delay: number;
+  delayFlags: number;
+}
+
+interface IFOutput extends IOutputContent {
+  isPersistent: boolean;
+}
 
 export class OutputService extends StatefulService<TOutputServiceState> {
   private initialized = false;
-  private db = new PouchDB(path.join(remote.app.getPath('userData'), 'Outputs'));
+  private db = new DBQueueManager<IOutputContent>(
+    path.join(remote.app.getPath('userData'), 'Outputs')
+  );
+
   private propManagers: Dictionary<PropertiesManager> = {};
-  private putQueues: Dictionary<any[]> = {};
 
   @Inject() providerService: ProviderService;
   @Inject() encoderService: EncoderService;
-  
+
   static initialState: TOutputServiceState = {};
 
   static getUniqueId(): string {
     return 'output_' + ipcRenderer.sendSync('getUniqueId');
   }
 
-  private async handleChange(response: PouchDB.Core.Response) {
-    const queue = this.putQueues[response.id];
+  private queueChange(uniqueId: string) {
+    const output = this.state[uniqueId];
 
-    this.UPDATE_REVISION(response.id, response.rev);
-    
-    queue.shift();
+    if (!output.isPersistent) return;
 
-    if (queue.length > 0) {
-      this.db.put({
-        ... queue[0],
-        _id: response.id,
-        _rev: response.rev
-      }).then((response) => { this.handleChange(response); });
-    }
-  }
-
-  private async handleDeletion(response: PouchDB.Core.Response) {
-    this.REMOVE_OUTPUT(response.id);
-
-    this.propManagers[response.id].destroy();
-    delete this.propManagers[response.id];
-  }
-
-  private buildChange(uniqueId: string, output: FOutput) {
-    return {
-      _id:      uniqueId,
-      _rev:     output.revision,
-      type:     output.type,
+    const change = {
+      type: output.type,
       settings: output.settings,
       audioEncoder: output.audioEncoder,
       videoEncoder: output.videoEncoder,
       provider: output.provider,
-      delay:    output.delay,
+      delay: output.delay,
       delayFlags: output.delayFlags
     };
+
+    this.db.queueChange(uniqueId, change);
   }
 
-  private queueChange(uniqueId: string) {
-    const queue = this.putQueues[uniqueId];
-    const output = this.state[uniqueId];
-
-    const change = this.buildChange(uniqueId, output);
-
-    if (queue.push(change) !== 1) {
-      return;
-    }
-
-    this.db.put(change)
-      .then((response) => { this.handleChange(response); });
-  }
-
-  private async queueDeletion(uniqueId: string) {
-    const queue = this.putQueues[uniqueId];
-    const output = this.state[uniqueId];
-
-    /* The array is dead, just empty it */
-    queue.length = 0;
-
-    this.db.remove({ _id: uniqueId, _rev: output.revision })
-      .then((response) => { this.handleDeletion(response); });
-  }
-
-  private syncConfig(result: any): void {
+  private syncConfig(
+    result: PouchDB.Core.AllDocsResponse<IOutputContent>
+  ): void {
     for (let i = 0; i < result.total_rows; ++i) {
       const entry = result.rows[i].doc;
 
-      const output: FOutput = {
-        revision: entry._rev,
+      const output: IFOutput = {
         type: entry.type,
         settings: entry.settings,
         audioEncoder: entry.audioEncoder,
@@ -104,45 +92,43 @@ export class OutputService extends StatefulService<TOutputServiceState> {
         provider: entry.provider,
         delay: entry.delay,
         delayFlags: entry.delayFlags,
-        flags: 0,
-        starting: false,
-        stopping: false,
-        reconnecting: false,
-        active: false
+        isPersistent: true
       };
 
       this.ADD_OUTPUT(entry._id, output);
-      FOutput.init(output.type, entry._id, output.settings);
 
-      /* To prevent database changes, set encoders/providers directly */
-      /* Note that some outputs don't require encoders or providers,
-       * we need to make sure that we stored one before attempting to
-       * assign null, as that will cause a TypeError exception */
+      let obsOutput = null;
 
-      const obsOutput = obs.OutputFactory.fromName(entry._id);
+      if (entry.settings)
+        obsOutput = OutputFactory.create(entry.type, entry._id, entry.settings);
+      else obsOutput = OutputFactory.create(entry.type, entry._id);
 
       if (entry.audioEncoder) {
-        const obsAudioEncoder = obs.AudioEncoderFactory.fromName(entry.audioEncoder);
+        const obsAudioEncoder = AudioEncoderFactory.fromName(
+          entry.audioEncoder
+        );
         /* FIXME TODO We need to take into account track here */
         obsOutput.setAudioEncoder(obsAudioEncoder, 0);
       }
 
       if (entry.videoEncoder) {
-        const obsVideoEncoder = obs.VideoEncoderFactory.fromName(entry.videoEncoder);
+        const obsVideoEncoder = VideoEncoderFactory.fromName(
+          entry.videoEncoder
+        );
         obsOutput.setVideoEncoder(obsVideoEncoder);
       }
 
       if (entry.provider) {
-        const obsProvider = obs.ServiceFactory.fromName(entry.provider);
+        const obsProvider = ServiceFactory.fromName(entry.provider);
         obsOutput.service = obsProvider;
       }
 
       obsOutput.setDelay(entry.delay, entry.delayFlags);
 
-      this.propManagers[entry._id] =
-        new DefaultManager(obs.OutputFactory.fromName(entry._id), {});
-
-      this.putQueues[entry._id] = [];
+      this.propManagers[entry._id] = new DefaultManager(
+        OutputFactory.fromName(entry._id),
+        {}
+      );
     }
   }
 
@@ -150,10 +136,7 @@ export class OutputService extends StatefulService<TOutputServiceState> {
     if (this.initialized) return;
     await this.encoderService.initialize();
     await this.providerService.initialize();
-
-    await this.db.allDocs({
-      include_docs: true
-    }).then((result: any) => { this.syncConfig(result); });
+    await this.db.initialize(response => this.syncConfig(response));
 
     this.initialized = true;
   }
@@ -162,20 +145,14 @@ export class OutputService extends StatefulService<TOutputServiceState> {
     const keys = Object.keys(this.state);
 
     for (let i = 0; i < keys.length; ++i) {
-      const obsObject = obs.OutputFactory.fromName(keys[i]);
+      const obsObject = OutputFactory.fromName(keys[i]);
 
-      if (obsObject)
-        obsObject.release();
+      if (obsObject) obsObject.release();
     }
   }
 
   @mutation()
-  private UPDATE_REVISION(uniqueId: string, revision: string) {
-    this.state[uniqueId].revision = revision;
-  }
-
-  @mutation()
-  private ADD_OUTPUT(uniqueId: string, fOutput: FOutput) {
+  private ADD_OUTPUT(uniqueId: string, fOutput: IFOutput) {
     Vue.set(this.state, uniqueId, fOutput);
   }
 
@@ -213,20 +190,7 @@ export class OutputService extends StatefulService<TOutputServiceState> {
 
   @mutation()
   private UPDATE_PROVIDER(uniqueId: string, providerId: string) {
-    const fOutput = this.state[uniqueId];
-    fOutput.provider = providerId;
-  }
-
-  @mutation()
-  private START_OUTPUT(uniqueId: string) {
-    const fOutput = this.state[uniqueId];
-    fOutput.active = true;
-  }
-
-  @mutation()
-  private STOP_OUTPUT(uniqueId: string) {
-    const fOutput = this.state[uniqueId];
-    fOutput.active = false;
+    this.state[uniqueId].provider = providerId;
   }
 
   @mutation()
@@ -239,51 +203,74 @@ export class OutputService extends StatefulService<TOutputServiceState> {
     this.state[uniqueId].delayFlags = flags;
   }
 
-  addOutput(uniqueId: string, output: FOutput) {
-    const obsOutput = obs.OutputFactory.fromName(uniqueId);
+  addOutput(
+    type: string,
+    uniqueId: string,
+    isPersistent?: boolean,
+    settings?: ISettings
+  ) {
+    let obsOutput = null;
+
+    if (isPersistent === undefined) isPersistent = true;
+    if (settings) obsOutput = OutputFactory.create(type, uniqueId, settings);
+    else obsOutput = OutputFactory.create(type, uniqueId);
+
+    const output: IFOutput = {
+      type,
+      settings,
+      audioEncoder: '',
+      videoEncoder: '',
+      provider: '',
+      delay: 0,
+      delayFlags: 0,
+      isPersistent
+    };
+
     this.ADD_OUTPUT(uniqueId, output);
 
-    /* No need for revision here since this is creation */
+    setupConfigurableDefaults(obsOutput);
+    this.UPDATE_SETTINGS(uniqueId, obsOutput.settings);
 
-    this.putQueues[uniqueId] = [];
+    this.db.addQueue(uniqueId);
     this.queueChange(uniqueId);
     this.propManagers[uniqueId] = new DefaultManager(obsOutput, {});
   }
 
   removeOutput(uniqueId: string) {
-    /* Release directly to avoid a third map lookup. */
-    const output = obs.OutputFactory.fromName(uniqueId);
+    const output = OutputFactory.fromName(uniqueId);
     output.release();
 
-    this.queueDeletion(uniqueId);
+    this.propManagers[uniqueId].destroy();
+    delete this.propManagers[uniqueId];
+
+    if (this.state.isPersistent) this.db.queueDeletion(uniqueId);
+
     this.REMOVE_OUTPUT(uniqueId);
   }
 
   startOutput(uniqueId: string) {
-    const output = obs.OutputFactory.fromName(uniqueId);
+    const output = OutputFactory.fromName(uniqueId);
     const videoEncoder = output.getVideoEncoder();
     const audioEncoder = output.getAudioEncoder(0);
 
     /* If we previously reset video, the global context
      * will be invalid. As a result, just assign the encoders
      * the current global before we start streaming. */
-    videoEncoder.setVideo(obs.VideoFactory.getGlobal());
-    audioEncoder.setAudio(obs.AudioFactory.getGlobal());
+    videoEncoder.setVideo(VideoFactory.getGlobal());
+    audioEncoder.setAudio(AudioFactory.getGlobal());
 
-    this.START_OUTPUT(uniqueId);
     return output.start();
   }
 
   stopOutput(uniqueId: string) {
-    const output = obs.OutputFactory.fromName(uniqueId);
+    const output = OutputFactory.fromName(uniqueId);
 
     output.stop();
-    this.STOP_OUTPUT(uniqueId);
   }
 
   setOutputVideoEncoder(uniqueId: string, encoderId: string) {
-    const videoEncoder = obs.VideoEncoderFactory.fromName(encoderId);
-    const output = obs.OutputFactory.fromName(uniqueId);
+    const videoEncoder = VideoEncoderFactory.fromName(encoderId);
+    const output = OutputFactory.fromName(uniqueId);
 
     output.setVideoEncoder(videoEncoder);
 
@@ -292,18 +279,18 @@ export class OutputService extends StatefulService<TOutputServiceState> {
   }
 
   setOutputAudioEncoder(uniqueId: string, encoderId: string, track: number) {
-    const audioEncoder = obs.AudioEncoderFactory.fromName(encoderId);
-    const output = obs.OutputFactory.fromName(uniqueId);
+    const audioEncoder = AudioEncoderFactory.fromName(encoderId);
+    const output = OutputFactory.fromName(uniqueId);
 
     output.setAudioEncoder(audioEncoder, track);
-    
+
     this.UPDATE_AUDIO_ENCODER(uniqueId, encoderId);
     this.queueChange(uniqueId);
   }
 
   setOutputProvider(uniqueId: string, serviceId: string) {
-    const service = obs.ServiceFactory.fromName(serviceId);
-    const output = obs.OutputFactory.fromName(uniqueId);
+    const service = ServiceFactory.fromName(serviceId);
+    const output = OutputFactory.fromName(uniqueId);
 
     output.service = service;
 
@@ -323,12 +310,8 @@ export class OutputService extends StatefulService<TOutputServiceState> {
     return this.state[uniqueId].provider;
   }
 
-  isOutputActive(uniqueId: string): boolean {
-    return this.state[uniqueId].active;
-  }
-
   isOutput(uniqueId: string) {
-    const obsOutput: obs.IOutput = obs.OutputFactory.fromName(uniqueId);
+    const obsOutput: IOutput = OutputFactory.fromName(uniqueId);
 
     if (obsOutput) return true;
 
@@ -336,7 +319,7 @@ export class OutputService extends StatefulService<TOutputServiceState> {
   }
 
   update(uniqueId: string, patch: object) {
-    const obsOutput = obs.OutputFactory.fromName(uniqueId);
+    const obsOutput = OutputFactory.fromName(uniqueId);
 
     const settings = obsOutput.settings;
     const changes = Object.keys(patch);
@@ -357,7 +340,7 @@ export class OutputService extends StatefulService<TOutputServiceState> {
    * hold it instead and handle it as if
    * it were persistent state */
   setDelay(uniqueId: string, delay: number) {
-    const obsOutput = obs.OutputFactory.fromName(uniqueId);
+    const obsOutput = OutputFactory.fromName(uniqueId);
     const flags = this.state[uniqueId].delayFlags;
 
     obsOutput.setDelay(delay, flags);
@@ -370,7 +353,7 @@ export class OutputService extends StatefulService<TOutputServiceState> {
   }
 
   setDelayFlag(uniqueId: string, flags: number) {
-    const obsOutput = obs.OutputFactory.fromName(uniqueId);
+    const obsOutput = OutputFactory.fromName(uniqueId);
     const delay = this.state[uniqueId].delay;
 
     obsOutput.setDelay(delay, flags);
@@ -389,38 +372,38 @@ export class OutputService extends StatefulService<TOutputServiceState> {
   setPropertiesFormData(uniqueId: string, formData: TFormData) {
     this.propManagers[uniqueId].setPropertiesFormData(formData);
 
-    const settings = obs.OutputFactory.fromName(uniqueId).settings;
+    const settings = OutputFactory.fromName(uniqueId).settings;
     this.UPDATE_SETTINGS(uniqueId, settings);
 
     this.queueChange(uniqueId);
   }
 
   onStart(uniqueId: string, callback: (output: string) => void) {
-    const obsOutput = obs.OutputFactory.fromName(uniqueId);
+    const obsOutput = OutputFactory.fromName(uniqueId);
 
     obsOutput.on('start', callback);
   }
 
   onStop(uniqueId: string, callback: (output: string, code: number) => void) {
-    const obsOutput = obs.OutputFactory.fromName(uniqueId);
+    const obsOutput = OutputFactory.fromName(uniqueId);
 
     obsOutput.on('stop', callback);
   }
 
   onReconnect(uniqueId: string, callback: (output: string) => void) {
-    const obsOutput = obs.OutputFactory.fromName(uniqueId);
+    const obsOutput = OutputFactory.fromName(uniqueId);
 
     obsOutput.on('reconnect', callback);
   }
 
   onReconnectSuccess(uniqueId: string, callback: (output: string) => void) {
-    const obsOutput = obs.OutputFactory.fromName(uniqueId);
-    
+    const obsOutput = OutputFactory.fromName(uniqueId);
+
     obsOutput.on('reconnect_success', callback);
   }
 
   getLastError(uniqueId: string): string {
-    const obsOutput = obs.OutputFactory.fromName(uniqueId);
+    const obsOutput = OutputFactory.fromName(uniqueId);
 
     return obsOutput.getLastError();
   }

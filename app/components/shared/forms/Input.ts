@@ -138,7 +138,7 @@ function parsePathFilters(filterStr: string): IElectronOpenDialogFilter[] {
 
 export function getPropertiesFormData(obsSource: obs.IConfigurable): TFormData {
 
-  setupSourceDefaults(obsSource);
+  setupConfigurableDefaults(obsSource);
   
   const formData: TFormData = [];
   const obsProps = obsSource.properties;
@@ -244,7 +244,7 @@ export function setPropertiesFormData(obsSource: obs.IConfigurable, form: TFormD
 }
 
 
-export function setupSourceDefaults(obsSource: obs.IConfigurable) {
+export function setupConfigurableDefaults(obsSource: obs.IConfigurable) {
   const propSettings = obsSource.settings;
   const defaultSettings = {};
   const properties = obsSource.properties;

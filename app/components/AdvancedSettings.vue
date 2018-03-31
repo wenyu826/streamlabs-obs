@@ -10,17 +10,26 @@
       </h4>
     </div>
     <div class="section-contect section-content--dropdown" v-if="!videoCollapsed">
-      <ListInput
-        v-model="videoFormatForm"
-        @input="inputVideoFormat" />
+      <SettingsListInput
+        :value="videoFormatValue"
+        @input="inputVideoFormat"
+        :disabled="isActive"
+        :options="videoFormatOptions"
+        description="Color Format" />
 
-      <ListInput
-        v-model="videoColorSpaceForm"
-        @input="inputVideoColorSpace" />
+      <SettingsListInput
+        :value="videoColorSpaceValue"
+        @input="inputVideoColorSpace"
+        :disabled="isActive"
+        :options="videoColorSpaceOptions"
+        description="Color Space" />
 
-      <ListInput
-        v-model="videoColorRangeForm"
-        @input="inputVideoColorRange" />
+      <SettingsListInput
+        :value="videoColorRangeValue"
+        @input="inputVideoColorRange"
+        :disabled="isActive"
+        :options="videoColorRangeOptions"
+        description="Color Range" />
     </div>
   </div>
 
@@ -35,7 +44,7 @@
     </div>
     <div class="section-contect section-content--dropdown" v-if="!audioCollapsed">
       <ListInput
-        v-model="monitoringDevicesForm"
+        :value="monitoringDevicesForm"
         @input="inputMonitoringDevices" />
     </div>
   </div>
@@ -53,12 +62,12 @@
       <BoolInput v-model="streamDelayEnabled" />
 
       <IntInput 
-        v-model="streamDelayTime"
+        :value="streamDelayTime"
         @input="inputStreamDelayTime"
         v-if="streamDelayEnabled.value" />
 
       <BoolInput
-        v-model="streamPreserve"
+        :value="streamPreserve"
         v-if="streamDelayEnabled.value" />
     </div>
   </div>
@@ -74,7 +83,7 @@
     </div>
     <div class="section-contect section-content--dropdown" v-if="!networkCollapsed">
       <GenericForm
-        v-model="networkForm"
+        :value="networkForm"
         @input="inputNetwork" />
     </div>
   </div>

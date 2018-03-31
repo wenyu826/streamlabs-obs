@@ -20,6 +20,7 @@ export interface IStreamingServiceState {
   streamingStatusTime: string;
   recordingStatus: ERecordingState;
   recordingStatusTime: string;
+  isActive: boolean;
 }
 
 export interface IStreamingServiceApi {

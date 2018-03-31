@@ -4,7 +4,7 @@ import { Inject } from '../../util/injector';
 import ModalLayout from '../ModalLayout.vue';
 import NavMenu from '../shared/NavMenu.vue';
 import NavItem from '../shared/NavItem.vue';
-import GenericFormGroups from '../shared/forms/GenericFormGroups.vue';
+import GenericForm from '../shared/forms/GenericForm.vue';
 import { WindowsService } from '../../services/windows';
 import windowMixin from '../mixins/window';
 import GeneralSettings from '../GeneralSettings.vue';
@@ -23,7 +23,7 @@ import AdvancedSettings from 'components/AdvancedSettings.vue';
 @Component({
   components: {
     ModalLayout,
-    GenericFormGroups,
+    GenericForm,
     NavMenu,
     NavItem,
     GeneralSettings,

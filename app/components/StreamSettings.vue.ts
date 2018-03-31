@@ -1,50 +1,66 @@
 import Vue from 'vue';
-import { Component } from 'vue-property-decorator';
+import { Component, Watch } from 'vue-property-decorator';
 import { Inject } from '../util/injector';
-import GenericFormGroups from './shared/forms/GenericFormGroups.vue';
+import SettingsListInput from './shared/forms/SettingsListInput.vue';
+import GenericForm from './shared/forms/GenericForm.vue';
 import { RtmpOutputService, EProviderMode } from 'services/rtmp-output';
 import { ProviderService } from 'services/providers';
-import { TFormData, getPropertiesFormData } from './shared/forms/Input';
+import { TFormData, IListOption, getPropertiesFormData } from './shared/forms/Input';
 import { ServiceFactory } from 'services/obs-api';
 import { Multiselect } from 'vue-multiselect';
-
-interface StreamTypeSelection {
-  label: string,
-  value: EProviderMode
-}
+import { StreamingService } from 'services/streaming';
 
 @Component({
-  components: { GenericFormGroups, Multiselect }
+  components: { GenericForm, SettingsListInput }
 })
 
 export default class StreamSettings extends Vue {
 
   @Inject() rtmpOutputService: RtmpOutputService;
   @Inject() providerService: ProviderService;
+  @Inject() streamingService: StreamingService;
 
-  settingsFormData = this.providerService.getPropertyFormData(this.rtmpOutputService.getProviderId());
-  serviceType: StreamTypeSelection[] = [
-    { 
-      label: 'Streaming Service',
-      value: EProviderMode.Common
-    },
-    {
-      label: 'Custom',
-      value: EProviderMode.Custom
+  getPropertyFormData = () => {
+    const formData = this.providerService.getPropertyFormData(this.rtmpOutputService.getProviderId());
+
+    for (let i = 0; i < formData.length; ++i) {
+        formData[i].enabled = !this.isActive;
     }
+
+    return formData;
+  }
+
+  settingsFormData = this.getPropertyFormData();
+
+  get serviceTypeValue() {
+      return this.rtmpOutputService.state.rtmpProviderMode;
+  }
+
+  serviceTypeOptions = [
+    { description: 'Streaming Service', value: EProviderMode.Common },
+    { description: 'Custom', value: EProviderMode.Custom }
   ];
 
-  setServiceType(selection: StreamTypeSelection) {
-    this.rtmpOutputService.setProviderMode(selection.value);
-    
-    const providerId = this.rtmpOutputService.getProviderId();
-    this.settingsFormData = this.providerService.getPropertyFormData(providerId);
+  inputServiceType(option: IListOption<number>) {
+    this.rtmpOutputService.setProviderMode(option.value);
+    this.settingsFormData = this.getPropertyFormData();
+  }
+
+  get isActive() {
+      return this.streamingService.isStreaming;
+  }
+
+  @Watch('isActive')
+  checkActive() {
+    for (let i = 0; i < this.settingsFormData.length; ++i) {
+        this.settingsFormData[i].enabled = !this.isActive;
+    }
   }
 
   save(formData: TFormData) {
     const providerId = this.rtmpOutputService.getProviderId();
 
     this.providerService.setPropertyFormData(providerId, formData);
-    this.settingsFormData = this.providerService.getPropertyFormData(providerId);
+    this.settingsFormData = this.getPropertyFormData();
   }
 }

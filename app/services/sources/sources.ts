@@ -1,6 +1,6 @@
 import Vue from 'vue';
 import { Subject } from 'rxjs/Subject';
-import { IListOption, setupSourceDefaults } from 'components/shared/forms/Input';
+import { IListOption, setupConfigurableDefaults } from 'components/shared/forms/Input';
 import { StatefulService, mutation } from 'services/stateful-service';
 import * as obs from '../../../obs-api';
 import electron from 'electron';
@@ -171,7 +171,7 @@ export class SourcesService extends StatefulService<ISourcesState> implements IS
       type: managerType
     };
 
-    if (source.hasProps()) setupSourceDefaults(obsInput);
+    if (source.hasProps()) setupConfigurableDefaults(obsInput);
     this.sourceAdded.next(source.sourceState);
   }
 

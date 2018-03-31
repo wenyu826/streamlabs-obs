@@ -1,23 +1,16 @@
 <template>
 <div>
   <div class="section">
-    <div class="input-container select">
-      <div class="input-label">
-        <label>Stream Type</label>
-      </div>
-      <div class="input-wrapper">
-        <multiselect
-          :options="serviceType"
-          :value="serviceType[0]"
-          @input="setServiceType"
-          label="label">
-        </multiselect>
-      </div>
-    </div>
+    <SettingsListInput
+        :options="serviceTypeOptions"
+        :value="serviceTypeValue"
+        :disabled="isActive"
+        @input="inputServiceType"
+        description="Service Type" />
   </div>
   <div class="section">
-    <GenericFormGroups
-      v-model="settingsFormData"
+    <GenericForm
+      :value="settingsFormData"
       @input="save" />
   </div>
 </div>

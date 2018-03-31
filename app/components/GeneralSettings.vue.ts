@@ -97,69 +97,57 @@ export default class GeneralSettings extends Vue {
 
   get snappingEnabled(): IFormInput<boolean> {
     return {
-      value: this.settingsStorageService.state.Settings.General.SnappingEnabled,
+      value: this.settingsStorageService.state.General.SnappingEnabled,
       name: 'snapping_enabled',
       description: 'Enabled'
     };
   }
 
   set snappingEnabled(formData: IFormInput<boolean>) {
-    this.settingsStorageService.setSettings({
-      General: {
-        ...this.settingsStorageService.state.Settings.General,
-        SnappingEnabled: formData.value
-      }
+    this.settingsStorageService.setGeneralSettings({
+      SnappingEnabled: formData.value
     });
   }
 
   get snappingSensitivity(): IFormInput<number> {
     return {
-      value: this.settingsStorageService.state.Settings.General.SnapDistance,
+      value: this.settingsStorageService.state.General.SnapDistance,
       name: 'snapping_distance',
       description: 'Snapping Sensitivity'
     };
   }
 
   set snappingSensitivity(formData: IFormInput<number>) {
-    this.settingsStorageService.setSettings({
-      General: {
-        ...this.settingsStorageService.state.Settings.General,
+    this.settingsStorageService.setGeneralSettings({
         SnapDistance: formData.value
-      }
     });
   }
 
   get snappingEdges(): IFormInput<boolean> {
     return {
-      value: this.settingsStorageService.state.Settings.General.ScreenSnapping,
+      value: this.settingsStorageService.state.General.ScreenSnapping,
       name: 'snapping_edge',
       description: 'Snap sources to edge of screen'
     };
   }
 
   set snappingEdges(formData: IFormInput<boolean>) {
-    this.settingsStorageService.setSettings({
-      General: {
-        ...this.settingsStorageService.state.Settings.General,
-        ScreenSnapping: formData.value
-      }
+    this.settingsStorageService.setGeneralSettings({
+      ScreenSnapping: formData.value
     });
   }
 
   get snappingSources(): IFormInput<boolean> {
     return {
-      value: this.settingsStorageService.state.Settings.General.SourceSnapping,
+      value: this.settingsStorageService.state.General.SourceSnapping,
       name: 'snapping_sources',
       description: 'Snap sources to other sources'
     };
   }
 
   set snappingSources(formData: IFormInput<boolean>) {
-    this.settingsStorageService.setSettings({
-      General: {
-        ...this.settingsStorageService.state.Settings.General,
-        SourceSnapping: formData.value
-      }
+    this.settingsStorageService.setGeneralSettings({
+      SourceSnapping: formData.value
     });
   }
 
@@ -167,69 +155,57 @@ export default class GeneralSettings extends Vue {
 
   get outputPrefWarnStartStream(): IFormInput<boolean> {
     return {
-      value: this.settingsStorageService.state.Settings.General.WarnBeforeStartingStream,
+      value: this.settingsStorageService.state.General.WarnBeforeStartingStream,
       name: 'warn_start_stream',
       description: 'Show confirmation dialog when starting streams'
     };
   }
 
   set outputPrefWarnStartStream(formData: IFormInput<boolean>) {
-    this.settingsStorageService.setSettings({
-      General: {
-        ...this.settingsStorageService.state.Settings.General,
-        WarnBeforeStartingStream: formData.value
-      }
+    this.settingsStorageService.setGeneralSettings({
+      WarnBeforeStartingStream: formData.value
     });
   }
 
   get outputPrefWarnStopStream(): IFormInput<boolean> {
     return {
-      value: this.settingsStorageService.state.Settings.General.WarnBeforeStoppingStream,
+      value: this.settingsStorageService.state.General.WarnBeforeStoppingStream,
       name: 'warn_stop_stream',
       description: 'Show confirmation dialog when stopping streams'
     };
   }
 
   set outputPrefWarnStopStream(formData: IFormInput<boolean>) {
-    this.settingsStorageService.setSettings({
-      General: {
-        ...this.settingsStorageService.state.Settings.General,
-        WarnBeforeStoppingStream: formData.value
-      }
+    this.settingsStorageService.setGeneralSettings({
+      WarnBeforeStoppingStream: formData.value
     });
   }
 
   get outputPrefAutoRecord(): IFormInput<boolean> {
     return {
-      value: this.settingsStorageService.state.Settings.General.RecordWhenStreaming,
+      value: this.settingsStorageService.state.General.RecordWhenStreaming,
       name: 'auto_record',
       description: 'Automatically record when streaming'
     };
   }
 
   set outputPrefAutoRecord(formData: IFormInput<boolean>) {
-    this.settingsStorageService.setSettings({
-      General: {
-        ...this.settingsStorageService.state.Settings.General,
-        RecordWhenStreaming: formData.value
-      }
+    this.settingsStorageService.setGeneralSettings({
+      RecordWhenStreaming: formData.value
     });
   }
 
   get outputPrefRecordAfterStream(): IFormInput<boolean> {
     return {
-      value: this.settingsStorageService.state.Settings.General.KeepRecordingWhenStreamStops,
+      value: this.settingsStorageService.state.General.KeepRecordingWhenStreamStops,
       name: 'auto_record',
-      description: 'Automatically record when streaming'
+      description: 'Keep recording when stream stops'
     };
   }
 
   set outputPrefRecordAfterStream(formData: IFormInput<boolean>) {
-    this.settingsStorageService.setSettings({
-      General: {
-        ...this.settingsStorageService.state.Settings.General,
-        KeepRecordingWhenStreamStops: formData.value
-      }
+    this.settingsStorageService.setGeneralSettings({
+      KeepRecordingWhenStreamStops: formData.value
     });
   }
 }

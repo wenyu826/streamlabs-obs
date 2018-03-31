@@ -66,10 +66,10 @@ export class TcpServerService extends Service implements ITcpServerServiceAPI {
   }
 
   listen() {
-    const Settings = this.settingsStorageService.state.Settings;
-    if (Settings.NamedPipe.Enabled) this.listenConnections(this.createNamedPipeServer());
-    if (Settings.TCP.Enabled) this.listenConnections(this.createTcpServer());
-    if (Settings.WebSockets.Enabled) this.listenConnections(this.createWebSocketsServer());
+    const settings = this.settingsStorageService.state;
+    if (settings.NamedPipe.Enabled) this.listenConnections(this.createNamedPipeServer());
+    if (settings.TCP.Enabled) this.listenConnections(this.createTcpServer());
+    if (settings.WebSockets.Enabled) this.listenConnections(this.createWebSocketsServer());
   }
 
   stopListening() {
@@ -90,7 +90,7 @@ export class TcpServerService extends Service implements ITcpServerServiceAPI {
 
   private createNamedPipeServer(): IServer {
     console.log('Creating named pipe');
-    const settings = this.settingsStorageService.state.Settings;
+    const settings = this.settingsStorageService.state;
     const server = net.createServer();
     server.listen('\\\\.\\pipe\\' + settings.NamedPipe.PipeName);
     return {
@@ -105,7 +105,7 @@ export class TcpServerService extends Service implements ITcpServerServiceAPI {
   private createTcpServer(): IServer {
     console.log('Creating tcp server');
     const server = net.createServer();
-    const settings = this.settingsStorageService.state.Settings.TCP;
+    const settings = this.settingsStorageService.state.TCP;
     server.listen(settings.Port, settings.AllowRemote ? WILDCARD_HOST_NAME : LOCAL_HOST_NAME);
     return {
       nativeServer: server,
@@ -118,7 +118,7 @@ export class TcpServerService extends Service implements ITcpServerServiceAPI {
 
   private createWebSocketsServer(): IServer {
     console.log('Creating web socket server');
-    const settings = this.settingsStorageService.state.Settings.WebSockets;
+    const settings = this.settingsStorageService.state.WebSockets;
     const http = require('http');
     const sockjs = require('sockjs');
     const websocketsServer = sockjs.createServer();

@@ -8,9 +8,11 @@
       :value="findOption(value)"
       :disabled="disabled"
       :options="options"
+      :internal-search="internalSearch"
       :close-on-select="true"
+      :allow-empty="allowEmpty"
       :placeholder="placeholder"
-      :allow-custom="getCustomResolution"
+      :loading="loading"
       label="description"
       @input="onInputHandler"
       @search-change="onSearchChange">
@@ -24,4 +26,4 @@
 </div>
 </template>
 
-<script lang="ts" src="./ResolutionInput.vue.ts"></script>
+<script lang="ts" src="./SettingsListInput.vue.ts"></script>

@@ -1,133 +1,95 @@
-import { FProvider } from './provider';
 import { StatefulService, mutation } from '../stateful-service';
 import { ipcRenderer, remote } from 'electron';
 import { getConfigFilePath } from '../config';
 import { DefaultManager } from '../sources/properties-managers/default-manager';
-import { TFormData } from 'components/shared/forms/Input';
-import * as obs from '../obs-api';
+import { DBQueueManager } from 'services/common-config';
+import {
+  TFormData,
+  setupConfigurableDefaults
+} from 'components/shared/forms/Input';
 import path from 'path';
 import Vue from 'vue';
 import PouchDB from 'pouchdb';
+import { ISettings, IService, ServiceFactory } from 'services/obs-api';
 
-type TProviderServiceState = Dictionary<FProvider>;
+type TProviderServiceState = Dictionary<IFProvider>;
+
+interface IProviderContent {
+  type: string;
+  settings: ISettings;
+}
+
+interface IFProvider extends IProviderContent{
+  isPersistent: boolean;
+}
 
 export class ProviderService extends StatefulService<TProviderServiceState> {
   private initialized = false;
-  private db = new PouchDB(path.join(remote.app.getPath('userData'), 'Providers'));
+  private db = new DBQueueManager<IProviderContent>(
+    path.join(remote.app.getPath('userData'), 'Providers')
+  );
   private propManagers: Dictionary<DefaultManager> = {};
-  private putQueues: Dictionary<any[]> = {};
 
   static initialState: TProviderServiceState = {};
 
   static getUniqueId(): string {
     return 'provider_' + ipcRenderer.sendSync('getUniqueId');
   }
-  
-  /* handleChange and queueChange might be abstracted away
-   * at some point but I'm unsure of a good way to to do it
-   * in Javascript. */
-  private async handleChange(response: PouchDB.Core.Response) {
-    const queue = this.putQueues[response.id];
-
-    this.UPDATE_REVISION(response.id, response.rev);
-    
-    queue.shift();
-
-    if (queue.length > 0) {
-      this.db.put({
-        ... queue[0],
-        _id: response.id,
-        _rev: response.rev
-      }).then((response) => { this.handleChange(response); });
-    }
-  }
-
-  private async handleDeletion(response: PouchDB.Core.Response) {
-    this.REMOVE_PROVIDER(response.id);
-
-    this.propManagers[response.id].destroy();
-    delete this.propManagers[response.id];
-  }
 
   private queueChange(uniqueId: string) {
-    const queue = this.putQueues[uniqueId];
     const provider = this.state[uniqueId];
 
+    if (!provider.isPersistent) return;
+
     const change = {
-      _id:      uniqueId,
-      type:     provider.type,
-      settings: provider.settings,
-      key:      provider.key,
-      url:      provider.url,
-      username: provider.username,
-      password: provider.password,
-      provider: provider.provider
+      type: provider.type,
+      settings: provider.settings
     };
 
-    if (queue.push(change) !== 1) {
-      return;
-    }
-
-    this.db.put({
-      ... change,
-      _rev: this.state[uniqueId].revision
-    }).then((response) => { this.handleChange(response); });
-  }
-
-  private async queueDeletion(uniqueId: string) {
-    const queue = this.putQueues[uniqueId];
-    const output = this.state[uniqueId];
-
-    /* The array is dead, just empty it */
-    queue.length = 0;
-
-    this.db.remove({ _id: uniqueId, _rev: output.revision })
-      .then((response) => { this.handleDeletion(response); });
+    this.db.queueChange(uniqueId, change);
   }
 
   private syncConfig(result: any): void {
     for (let i = 0; i < result.total_rows; ++i) {
       const entry = result.rows[i].doc;
 
-      const provider: FProvider = {
-        revision: entry._rev,
+      const provider: IFProvider = {
         type: entry.type,
         settings: entry.settings,
-        key: entry.key,
-        url: entry.url,
-        username: entry.username,
-        password: entry.password,
-        provider: entry.provider
+        isPersistent: true
       };
 
       this.ADD_PROVIDER(entry._id, provider);
-      FProvider.init(provider.type, entry._id, provider.settings);
 
-      this.propManagers[entry._id] = 
-        new DefaultManager(obs.ServiceFactory.fromName(entry._id), {});
+      let obsService: IService = null;
 
-      this.putQueues[entry._id] = [];
+      if (entry.settings)
+        obsService = ServiceFactory.create(
+          entry.type,
+          entry._id,
+          entry.settings
+        );
+      else obsService = ServiceFactory.create(entry.type, entry._id);
+
+      this.propManagers[entry._id] = new DefaultManager(obsService, {});
     }
   }
 
   async initialize() {
     if (this.initialized) return;
 
-    await this.db.allDocs({
-      include_docs: true
-    }).then((result: any) => { this.syncConfig(result); });
+    await this.db.initialize(response => this.syncConfig(response));
 
     this.initialized = true;
   }
-  
+
   destroy() {
     const keys = Object.keys(this.state);
 
     for (let i = 0; i < keys.length; ++i) {
-      const obsObject = obs.ServiceFactory.fromName(keys[i]);
+      const obsObject = ServiceFactory.fromName(keys[i]);
 
-      if (obsObject)
-        obsObject.release();
+      if (obsObject) obsObject.release();
     }
   }
 
@@ -136,13 +98,8 @@ export class ProviderService extends StatefulService<TProviderServiceState> {
     this.state[uniqueId].settings = settings;
   }
 
-  @mutation() 
-  private UPDATE_REVISION(uniqueId: string, revision: string) {
-    this.state[uniqueId].revision = revision;
-  }
-
   @mutation()
-  private ADD_PROVIDER(uniqueId: string, fProvider: FProvider) {
+  private ADD_PROVIDER(uniqueId: string, fProvider: IFProvider) {
     Vue.set(this.state, uniqueId, fProvider);
   }
 
@@ -151,25 +108,52 @@ export class ProviderService extends StatefulService<TProviderServiceState> {
     Vue.delete(this.state, uniqueId);
   }
 
-  addProvider(uniqueId: string, provider: FProvider) {
-    const obsService = obs.ServiceFactory.fromName(uniqueId);
+  addProvider(
+    type: string,
+    uniqueId: string,
+    isPersistent?: boolean,
+    settings?: ISettings
+  ) {
+    let obsService = null;
+
+    if (isPersistent === undefined) isPersistent = true;
+    if (settings) obsService = ServiceFactory.create(type, uniqueId, settings);
+    else obsService = ServiceFactory.create(type, uniqueId);
+
+    const provider: IFProvider = {
+      type,
+      settings,
+      isPersistent
+    };
+
     this.ADD_PROVIDER(uniqueId, provider);
 
-    this.putQueues[uniqueId] = [];
+    /* There might be a better way of doing this but
+     * this is how Qt UI does it right now. */
+    setupConfigurableDefaults(obsService);
+    this.UPDATE_SETTINGS(uniqueId, obsService.settings);
+
+    this.db.addQueue(uniqueId);
     this.queueChange(uniqueId);
 
     this.propManagers[uniqueId] = new DefaultManager(obsService, {});
   }
 
   removeProvider(uniqueId: string) {
-    const service = obs.ServiceFactory.fromName(uniqueId);
+    const service = ServiceFactory.fromName(uniqueId);
     service.release();
 
-    this.queueDeletion(uniqueId);
+    this.REMOVE_PROVIDER(uniqueId);
+
+    this.propManagers[uniqueId].destroy();
+    delete this.propManagers[uniqueId];
+
+    if (!this.state.isPersistent) return;
+    this.db.queueDeletion(uniqueId);
   }
 
   isProvider(uniqueId: string) {
-    const obsService: obs.IService = obs.ServiceFactory.fromName(uniqueId);
+    const obsService: IService = ServiceFactory.fromName(uniqueId);
 
     if (obsService) return true;
 
@@ -184,7 +168,7 @@ export class ProviderService extends StatefulService<TProviderServiceState> {
   setPropertyFormData(uniqueId: string, formData: TFormData) {
     this.propManagers[uniqueId].setPropertiesFormData(formData);
 
-    const settings = obs.ServiceFactory.fromName(uniqueId).settings;
+    const settings = ServiceFactory.fromName(uniqueId).settings;
     this.UPDATE_SETTINGS(uniqueId, settings);
 
     this.queueChange(uniqueId);

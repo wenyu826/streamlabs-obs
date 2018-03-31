@@ -57,17 +57,18 @@ export class StreamingService extends StatefulService<IStreamingServiceState>
     streamingStatus: EStreamingState.Offline,
     streamingStatusTime: new Date().toISOString(),
     recordingStatus: ERecordingState.Offline,
-    recordingStatusTime: new Date().toISOString()
+    recordingStatusTime: new Date().toISOString(),
+    isActive: false
   };
 
-  init() {
-  }
+  init() {}
 
   async initialize() {
     await this.rtmpOutputService.initialize();
-    const outputId = this.rtmpOutputService.getOutputId();
-    
-    this.outputService.onStart(outputId, (id) => {
+    const streamOutputId = this.rtmpOutputService.getOutputId();
+    const recOutputId = this.recOutputService.getOutputId();
+
+    this.outputService.onStart(streamOutputId, id => {
       this.handleOBSOutputSignal({
         type: EOBSOutputType.Streaming,
         signal: EOBSOutputSignal.Start,
@@ -75,7 +76,7 @@ export class StreamingService extends StatefulService<IStreamingServiceState>
       });
     });
 
-    this.outputService.onStop(outputId, (id, code) => {
+    this.outputService.onStop(streamOutputId, (id, code) => {
       this.handleOBSOutputSignal({
         type: EOBSOutputType.Streaming,
         signal: EOBSOutputSignal.Stop,
@@ -83,7 +84,7 @@ export class StreamingService extends StatefulService<IStreamingServiceState>
       });
     });
 
-    this.outputService.onReconnect(outputId, (id) => {
+    this.outputService.onReconnect(streamOutputId, id => {
       this.handleOBSOutputSignal({
         type: EOBSOutputType.Streaming,
         signal: EOBSOutputSignal.Reconnect,
@@ -91,11 +92,27 @@ export class StreamingService extends StatefulService<IStreamingServiceState>
       });
     });
 
-    this.outputService.onReconnectSuccess(outputId, (id) => {
+    this.outputService.onReconnectSuccess(streamOutputId, id => {
       this.handleOBSOutputSignal({
         type: EOBSOutputType.Streaming,
         signal: EOBSOutputSignal.ReconnectSuccess,
         code: 0
+      });
+    });
+
+    this.outputService.onStart(recOutputId, id => {
+      this.handleOBSOutputSignal({
+        type: EOBSOutputType.Recording,
+        signal: EOBSOutputSignal.Start,
+        code: 0
+      });
+    });
+
+    this.outputService.onStop(recOutputId, (id, code) => {
+      this.handleOBSOutputSignal({
+        type: EOBSOutputType.Recording,
+        signal: EOBSOutputSignal.Stop,
+        code
       });
     });
   }
@@ -110,6 +127,16 @@ export class StreamingService extends StatefulService<IStreamingServiceState>
 
   get isRecording() {
     return this.state.recordingStatus !== ERecordingState.Offline;
+  }
+
+  checkActive() {
+    if (!this.isStreaming && !this.isRecording) {
+      if (this.state.isActive === false) return;
+
+      this.SET_ACTIVE(false);
+    } else if (this.state.isActive !== true) {
+      this.SET_ACTIVE(true);
+    }
   }
 
   /**
@@ -127,7 +154,7 @@ export class StreamingService extends StatefulService<IStreamingServiceState>
   }
 
   toggleStreaming() {
-    const Settings =  this.settingsStorageService.state.Settings.General;
+    const Settings = this.settingsStorageService.state.General;
 
     if (this.state.streamingStatus === EStreamingState.Offline) {
       const shouldConfirm = Settings.WarnBeforeStartingStream;
@@ -140,7 +167,11 @@ export class StreamingService extends StatefulService<IStreamingServiceState>
       );
 
       if (!this.rtmpOutputService.start()) {
-        alert(`Failed to start output: ${this.outputService.getLastError(this.rtmpOutputService.getOutputId())}`);
+        alert(
+          `Failed to start output: ${this.outputService.getLastError(
+            this.rtmpOutputService.getOutputId()
+          )}`
+        );
         return;
       }
 
@@ -215,11 +246,23 @@ export class StreamingService extends StatefulService<IStreamingServiceState>
 
   toggleRecording() {
     if (this.state.recordingStatus === ERecordingState.Recording) {
+      this.handleOBSOutputSignal({
+        type: EOBSOutputType.Recording,
+        signal: EOBSOutputSignal.Stopping,
+        code: 0
+      });
+
       this.recOutputService.stop();
       return;
     }
 
     if (this.state.recordingStatus === ERecordingState.Offline) {
+      this.handleOBSOutputSignal({
+        type: EOBSOutputType.Recording,
+        signal: EOBSOutputSignal.Starting,
+        code: 0
+      });
+
       this.recOutputService.start();
       return;
     }
@@ -237,11 +280,11 @@ export class StreamingService extends StatefulService<IStreamingServiceState>
   }
 
   get delayEnabled() {
-    return this.settingsStorageService.state.Settings.Delay.Enabled;
+    return this.settingsStorageService.state.Delay.Enabled;
   }
 
   get delaySeconds() {
-    return this.settingsStorageService.state.Settings.Delay.Seconds;
+    return this.settingsStorageService.state.Delay.Seconds;
   }
 
   get delaySecondsRemaining() {
@@ -318,58 +361,69 @@ export class StreamingService extends StatefulService<IStreamingServiceState>
       }
     }
 
+    this.checkActive();
+
     if (info.code === 0) return;
 
     let errorText = '';
 
     if (EOBSOutputType.Streaming)
-      errorText = this.outputService.getLastError(this.rtmpOutputService.getOutputId());
-    else 
-      errorText = this.outputService.getLastError(this.recOutputService.getOutputId());
+      errorText = this.outputService.getLastError(
+        this.rtmpOutputService.getOutputId()
+      );
+    else
+      errorText = this.outputService.getLastError(
+        this.recOutputService.getOutputId()
+      );
 
     switch (info.code) {
       case EOutputCode.BadPath:
         alert(
-          'Invalid Path or Connection URL. ' + 
-          'Please check your settings to confirm that they are valid.');
-        
+          'Invalid Path or Connection URL. ' +
+            'Please check your settings to confirm that they are valid.'
+        );
+
         break;
       case EOutputCode.ConnectFailed:
         alert(
           'Failed to connect to the streaming server. ' +
-          'Please check your internet connection. ');
+            'Please check your internet connection. '
+        );
 
         break;
       case EOutputCode.Disconnected:
         alert(
           'Disconnected from the streaming server. ' +
-          'Please check your internet connection. ');
-        
+            'Please check your internet connection. '
+        );
+
         break;
       case EOutputCode.InvalidStream:
         alert(
           'Could not access the specified channel or stream key, ' +
-          'please double-check your stream key. ' +
-          'If it is correct, there may be a problem connecting to the server.');
+            'please double-check your stream key. ' +
+            'If it is correct, there may be a problem connecting to the server.'
+        );
 
         break;
       case EOutputCode.NoSpace:
-        alert(
-          'There is not sufficient disk space to continue recording.');
+        alert('There is not sufficient disk space to continue recording.');
 
         break;
       case EOutputCode.Unsupported:
         alert(
-          'The output format is either unsupported or ' + 
-          'does not support more than one audio track. ' +
-          'Please check your settings and try again. ' +
-          `Internal error: ${errorText}`);
+          'The output format is either unsupported or ' +
+            'does not support more than one audio track. ' +
+            'Please check your settings and try again. ' +
+            `Internal error: ${errorText}`
+        );
 
         break;
       case EOutputCode.Error:
         alert(
-          'An unexpected error occurred when trying ' + 
-          `to connect to the server. Internal error: ${errorText}`);
+          'An unexpected error occurred when trying ' +
+            `to connect to the server. Internal error: ${errorText}`
+        );
 
         break;
       default:
@@ -387,5 +441,10 @@ export class StreamingService extends StatefulService<IStreamingServiceState>
   private SET_RECORDING_STATUS(status: ERecordingState, time: string) {
     this.state.recordingStatus = status;
     this.state.recordingStatusTime = time;
+  }
+
+  @mutation()
+  private SET_ACTIVE(isActive: boolean) {
+    this.state.isActive = isActive;
   }
 }

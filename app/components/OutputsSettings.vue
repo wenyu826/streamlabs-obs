@@ -4,14 +4,17 @@
   <!-- Output Settings Mode Selection -->
 
   <div class="section">
-    <ListInput
-      v-model="outputSettingsModeForm"
-      @input="inputOutputSettingsMode" />
+    <SettingsListInput
+      :value="outputSettingsModeValue"
+      @input="inputOutputSettingsMode"
+      :options="outputSettingsModeOptions"
+      :disabled="isActive"
+      description="Output Mode" />
   </div>
 
   <!-- Simple Stream Settings -->
 
-  <div v-if="outputSettingsModeForm.value === 0">
+  <div v-if="outputSettingsModeValue === 0">
     <div class="section">
       <div class="section-title--dropdown">
         <h4 class="section-title" @click="simpleRtmpStreamCollapsed = !simpleRtmpStreamCollapsed">
@@ -21,24 +24,30 @@
         </h4>
       </div>
       <div class="section-content section-content--dropdown" v-if="!simpleRtmpStreamCollapsed">
-        <IntInput
-          v-model="simpleRtmpVideoBitrateForm"
-          @input="inputSimpleRtmpVideoBitrate" />
+        <SettingsIntInput
+          v-bind="rtmpVideoBitrateProps"
+          ref="simpleVideoBitrate"
+          @input="inputSimpleRtmpVideoBitrate"
+          description="Video Bitrate" />
         
-        <ListInput
-          v-model="simpleRtmpVideoEncoderTypeForm"
-          @input="inputSimpleRtmpVideoEncoderType" />
+        <SettingsListInput
+          :value="simpleRtmpVideoEncoderTypeValue"
+          @input="inputSimpleRtmpVideoEncoderType"
+          :disabled="isStreaming"
+          :options="videoEncoderOptions"
+          description="Video Encoder" />
 
-        <IntInput
-          v-model="simpleRtmpAudioBitrateForm"
-          @input="inputSimpleRtmpAudioBitrate" />
+        <SettingsIntInput
+          v-bind="rtmpAudioBitrateProps"
+          @input="inputSimpleRtmpAudioBitrate"
+          description="Audio Bitrate" />
       </div>
     </div>
   </div>
 
   <!-- Advanced Stream Settings -->
 
-  <div v-if="outputSettingsModeForm.value === 1">
+  <div v-if="outputSettingsModeValue === 1">
     <div class="section">
       <div class="section-title--dropdown">
         <h4 class="section-title" @click="advRtmpStreamCollapsed = !advRtmpStreamCollapsed">
@@ -48,12 +57,14 @@
         </h4>
       </div>
       <div class="section-content section-content--dropdown" v-if="!advRtmpStreamCollapsed">
-        <ListInput
-          v-model="advRtmpVideoEncoderTypeForm"
-          @input="inputAdvRtmpVideoEncoderType" />
+        <SettingsListInput
+          :value="advRtmpVideoEncoderTypeValue"
+          @input="inputAdvRtmpVideoEncoderType"
+          :disabled="isActive"
+          :options="videoEncoderOptions"/>
 
         <GenericForm 
-          v-model="advRtmpVideoEncoderForm"
+          :value="advRtmpVideoEncoderForm"
           @input="inputAdvRtmpVideoEncoder" />
       </div>
     </div>
@@ -70,13 +81,19 @@
       </h4>
     </div>
     <div class="section-contect section-content--dropdown" v-if="!recordingCollapsed">
-      <PathInput
-        v-model="recordingFolderPath"
-        @input="inputRecordingFolderPath" />
+      <SettingsPathInput
+        :value="recordingFolderPathValue"
+        @input="inputRecordingFolderPath"
+        description="Recording Path"
+        :disabled="isRecording" 
+        :properties="[ 'openDirectory' ]"/>
 
-      <ListInput
-        v-model="recordingFormat"
-        @input="inputRecordingFormat" />
+      <SettingsListInput
+        :value="recordingFormatValue"
+        @input="inputRecordingFormat"
+        description="Recording Format"
+        :options="recordingFormatOptions"
+        :disabled="isRecording" />
     </div>
   </div>
 </div>

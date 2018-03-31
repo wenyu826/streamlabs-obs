@@ -1,6 +1,7 @@
 import Vue from 'vue';
 import { Component } from 'vue-property-decorator';
 import { Inject } from '../util/injector';
+import SettingsListInput from './shared/forms/SettingsListInput.vue';
 import ListInput from './shared/forms/ListInput.vue';
 import BoolInput from './shared/forms/BoolInput.vue';
 import IntInput from './shared/forms/IntInput.vue';
@@ -25,9 +26,11 @@ import {
   ENumberType,
   Global
 } from 'services/obs-api';
+import { StreamingService } from 'services/streaming';
 
 @Component({
   components: {
+    SettingsListInput,
     ListInput,
     BoolInput,
     IntInput,
@@ -38,44 +41,46 @@ export default class AdvancedSettings extends Vue {
   @Inject() settingsStorageService: SettingsStorageService;
   @Inject() outputService: OutputService;
   @Inject() rtmpOutputService: RtmpOutputService;
+  @Inject() streamingService: StreamingService;
+
+  get isActive() {
+    return this.streamingService.state.isActive;
+  }
 
   videoCollapsed = false;
   audioCollapsed = false;
   streamDelayCollapsed = false;
   networkCollapsed = false;
 
-  videoFormatForm: IListInput<EVideoFormat> = {
-    value: this.settingsStorageService.state.Settings.Video.ColorFormat,
-    name: 'video_format',
-    description: 'Color Format',
-    options: [
-      { value: EVideoFormat.NV12, description: 'NV12' },
-      { value: EVideoFormat.I420, description: 'I420' },
-      { value: EVideoFormat.I444, description: 'I444' },
-      { value: EVideoFormat.RGBA, description: 'RGBA' }
-    ]
-  };
+  get videoFormatValue() {
+    return this.settingsStorageService.state.Video.ColorFormat;
+  }
 
-  videoColorSpaceForm: IListInput<EColorSpace> = {
-    value: this.settingsStorageService.state.Settings.Video.ColorSpace,
-    name: 'color_space',
-    description: 'Color Space',
-    options: [
-      { value: EColorSpace.CS601, description: '601' },
-      { value: EColorSpace.CS709, description: '709' }
-    ]
-  };
+  get videoColorSpaceValue() {
+    return this.settingsStorageService.state.Video.ColorSpace;
+  }
 
-  videoColorRangeForm: IListInput<ERangeType> = {
-    value: this.settingsStorageService.state.Settings.Video.ColorRange,
-    name: 'color_range',
-    description: 'Color Range',
-    options: [
-      { value: ERangeType.Default, description: 'Default' },
-      { value: ERangeType.Full, description: 'Full' },
-      { value: ERangeType.Partial, description: 'Partial' }
-    ]
-  };
+  get videoColorRangeValue() {
+    return this.settingsStorageService.state.Video.ColorRange;
+  } 
+
+  videoFormatOptions = [
+    { value: EVideoFormat.NV12, description: 'NV12' },
+    { value: EVideoFormat.I420, description: 'I420' },
+    { value: EVideoFormat.I444, description: 'I444' },
+    { value: EVideoFormat.RGBA, description: 'RGBA' }
+  ];
+
+  videoColorSpaceOptions = [
+    { value: EColorSpace.CS601, description: '601' },
+    { value: EColorSpace.CS709, description: '709' }
+  ];
+
+  videoColorRangeOptions = [
+    { value: ERangeType.Default, description: 'Default' },
+    { value: ERangeType.Full, description: 'Full' },
+    { value: ERangeType.Partial, description: 'Partial' }
+  ];
 
   private buildMonitoringDeviceOptions(): IListOption<string>[] {
     const monitoringDevices = Global.getAudioMonitoringDevices();
@@ -95,7 +100,7 @@ export default class AdvancedSettings extends Vue {
   }
 
   monitoringDevicesForm: IListInput<string> = {
-    value: this.settingsStorageService.state.Settings.Audio.MonitoringDeviceId,
+    value: this.settingsStorageService.state.Audio.MonitoringDeviceId,
     name: 'monitoring_device',
     description: 'Audio Monitoring Device',
     options: this.buildMonitoringDeviceOptions()
@@ -107,7 +112,7 @@ export default class AdvancedSettings extends Vue {
 
   get streamDelayEnabled(): IFormInput<boolean> {
     return {
-      value: this.settingsStorageService.state.Settings.Delay.Enabled,
+      value: this.settingsStorageService.state.Delay.Enabled,
       name: 'delay_enabled',
       description: 'Enabled'
     };
@@ -118,11 +123,8 @@ export default class AdvancedSettings extends Vue {
 
     this.outputService.setDelay(outputId, 0);
 
-    this.settingsStorageService.setSettings({
-      Delay: {
-        ...this.settingsStorageService.state.Settings.Delay,
-        Enabled: formData.value
-      }
+    this.settingsStorageService.setDelaySettings({
+      Enabled: formData.value
     });
   }
 
@@ -151,33 +153,24 @@ export default class AdvancedSettings extends Vue {
   }
 
   inputVideoFormat(formData: IListInput<EVideoFormat>) {
-    this.settingsStorageService.setSettings({
-      Video: {
-        ...this.settingsStorageService.state.Settings.Video,
-        ColorFormat: formData.value
-      }
+    this.settingsStorageService.setVideoSettings({
+      ColorFormat: formData.value
     });
 
     this.settingsStorageService.resetVideo();
   }
 
   inputVideoColorSpace(formData: IListInput<EColorSpace>) {
-    this.settingsStorageService.setSettings({
-      Video: {
-        ...this.settingsStorageService.state.Settings.Video,
-        ColorSpace: formData.value
-      }
+    this.settingsStorageService.setVideoSettings({
+      ColorSpace: formData.value
     });
 
     this.settingsStorageService.resetVideo();
   }
 
   inputVideoColorRange(formData: IListInput<EColorSpace>) {
-    this.settingsStorageService.setSettings({
-      Video: {
-        ...this.settingsStorageService.state.Settings.Video,
-        ColorRange: formData.value
-      }
+    this.settingsStorageService.setVideoSettings({
+      ColorRange: formData.value
     });
 
     this.settingsStorageService.resetVideo();
@@ -211,12 +204,9 @@ export default class AdvancedSettings extends Vue {
       }
     }
 
-    this.settingsStorageService.setSettings({
-      Audio: {
-        ...this.settingsStorageService.state.Settings.Audio,
-        MonitoringDeviceId: formData.value,
-        MonitoringDeviceName: name
-      }
+    this.settingsStorageService.setAudioSettings({
+      MonitoringDeviceId: formData.value,
+      MonitoringDeviceName: name
     });
 
     this.settingsStorageService.resetMonitoringDevice();

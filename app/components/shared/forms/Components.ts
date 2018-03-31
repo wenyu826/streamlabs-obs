@@ -35,7 +35,6 @@ function componentFromEditableList(subType: TSubPropertyType): typeof Vue {
     case obs.EEditableListType.Files:
     case obs.EEditableListType.FilesAndUrls:
     case obs.EEditableListType.Strings:
-      /* We don't have specialized components for these */
       break;
   }
 
@@ -47,7 +46,6 @@ function componentFromPath(subType: TSubPropertyType): typeof Vue {
     case obs.EPathType.Directory:
     case obs.EPathType.File:
     case obs.EPathType.FileSave:
-      /* We don't have specialized components for these */
       break;
   }
 
@@ -59,40 +57,10 @@ function componentFromText(subType: TSubPropertyType): typeof Vue {
     case obs.ETextType.Default:
     case obs.ETextType.Multiline:
     case obs.ETextType.Password:
-      /* We really need specialization for these... */
       break;
   }
 
   return Components.TextInput;
-}
-
-function getStringFromType(type: obs.EPropertyType | ECustomTypes): string {
-  switch (type) {
-    case obs.EPropertyType.Boolean:
-      return 'Boolean';
-    case obs.EPropertyType.Button:
-      return 'Button';
-    case obs.EPropertyType.Color:
-      return 'Color';
-    case obs.EPropertyType.EditableList:
-      return 'EditableList';
-    case obs.EPropertyType.Float:
-      return 'Float';
-    case obs.EPropertyType.Font:
-      return 'Font';
-    case obs.EPropertyType.FrameRate:
-      return 'FrameRate';
-    case obs.EPropertyType.Int:
-      return 'Int';
-    case obs.EPropertyType.Invalid:
-      return 'Invalid';
-    case obs.EPropertyType.List:
-      return 'List';
-    case obs.EPropertyType.Path:
-      return 'Path';
-    case obs.EPropertyType.Text:
-      return 'Text';
-  }
 }
 
 export function propertyComponentForType(

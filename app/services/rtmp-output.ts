@@ -1,9 +1,10 @@
-import { FOutput, OutputService } from './outputs';
-import { FProvider, ProviderService } from './providers';
-import { FAudioEncoder, FVideoEncoder, EncoderService } from './encoders';
+import { OutputService } from './outputs';
+import { ProviderService } from './providers';
+import { EncoderService } from './encoders';
 import { StatefulService, mutation } from './stateful-service';
 import { Inject } from 'util/injector';
 import PouchDB from 'pouchdb';
+import { DBQueueManager } from 'services/common-config';
 import { remote } from 'electron';
 import path from 'path';
 
@@ -17,13 +18,20 @@ export enum EEncoderMode {
   Advanced
 }
 
+export enum EAudioEncoders {
+  FFMpeg = 'ffmpeg_aac',
+  MediaFoundation = 'mf_aac',
+  LibFDK = 'libfdk_aac',
+  CoreAudio = 'CoreAudio_aac'
+}
+
 const docId = 'rtmp-output-settings';
 
-/* A wrapper class that handles the global rtmp output 
- * and it's associated objects and state. */
+declare type ExistingDatabaseDocument = PouchDB.Core.ExistingDocument<
+  RtmpOutputContent
+>;
 
-interface RtmpOutputServiceState {
-  revision?: string;
+interface RtmpOutputContent {
   rtmpOutputId: string;
 
   /* Here we make two encoders. They have two
@@ -39,17 +47,17 @@ interface RtmpOutputServiceState {
   /* Similar for providers (services) */
   rtmpCommonProviderId: string;
   rtmpCustomProviderId: string;
+  rtmpProviderMode: EProviderMode;
 }
 
-type ExistingDatabaseDocument = PouchDB.Core.ExistingDocument<RtmpOutputServiceState>;
+interface RtmpOutputServiceState extends RtmpOutputContent {}
 
 export class RtmpOutputService extends StatefulService<RtmpOutputServiceState> {
   private initialized = false;
 
-  private db: PouchDB.Database<RtmpOutputServiceState> = 
-    new PouchDB(path.join(remote.app.getPath('userData'), 'RtmpOutputService'));
-
-  private putQueue: any[] = [];
+  private db = new DBQueueManager<RtmpOutputContent>(
+    path.join(remote.app.getPath('userData'), 'RtmpOutputService')
+  );
 
   static initialState: RtmpOutputServiceState = {
     rtmpEncoderMode: EEncoderMode.Simple,
@@ -57,17 +65,13 @@ export class RtmpOutputService extends StatefulService<RtmpOutputServiceState> {
     rtmpSimpleEncoderId: '',
     rtmpAdvEncoderId: '',
     rtmpCommonProviderId: '',
-    rtmpCustomProviderId: ''
+    rtmpCustomProviderId: '',
+    rtmpProviderMode: EProviderMode.Common
   };
 
   @Inject() outputService: OutputService;
   @Inject() providerService: ProviderService;
   @Inject() encoderService: EncoderService;
-
-  @mutation()
-  UPDATE_REVISION(revision: string) {
-    this.state.revision = revision;
-  }
 
   @mutation()
   UPDATE_ENCODER_MODE(mode: EEncoderMode) {
@@ -99,107 +103,86 @@ export class RtmpOutputService extends StatefulService<RtmpOutputServiceState> {
     this.state.rtmpCustomProviderId = uniqueId;
   }
 
-  /* This occurs when the database doesn't exist */
-  private handleDbError(error: PouchDB.Core.Error): void {
-    /* A 404 is normal on a cold start */
-    if (error.status !== 404) {
-      /* Unsure how to proceed from here. */
-      throw Error(
-        `Problem with rtmp-output configuration document: ${error.message}`);
-    }
+  @mutation()
+  UPDATE_PROVIDER_MODE(mode: EProviderMode) {
+    this.state.rtmpProviderMode = mode;
+  }
 
+  private createConfig(): void {
+    console.log('CREATE CONFIG');
     const outputId = OutputService.getUniqueId();
-    const fOutput = new FOutput('rtmp_output', outputId);
+    this.outputService.addOutput('rtmp_output', outputId);
 
     const providerId = ProviderService.getUniqueId();
-    const provider = new FProvider('rtmp_common', providerId);
+    this.providerService.addProvider('rtmp_common', providerId);
 
-    this.UPDATE_CUSTOM_PROVIDER(ProviderService.getUniqueId());
-    const customProvider = new FProvider('rtmp_custom', this.state.rtmpCustomProviderId);
+    const customProviderId = ProviderService.getUniqueId();
+    this.providerService.addProvider('rtmp_custom', customProviderId);
 
-    const audioEncoderId = EncoderService.getUniqueId();
     /* FIXME Some logic on the best encoder to choose goes here */
-    const audioEncoder = new FAudioEncoder('mf_aac', audioEncoderId);
+    const audioEncoderId = EncoderService.getUniqueId();
+    this.encoderService.addAudioEncoder('ffmpeg_aac', audioEncoderId);
 
     const videoEncoderId = EncoderService.getUniqueId();
-    /* FIXME Some logic on the best encoder to choose goes here */
-    const videoEncoder = new FVideoEncoder('obs_x264', videoEncoderId);
+    this.encoderService.addVideoEncoder('obs_x264', videoEncoderId);
 
-    this.UPDATE_ADV_ENC(EncoderService.getUniqueId());
-    const advVideoEncoder = new FVideoEncoder('obs_x264', this.state.rtmpAdvEncoderId);
-
-    this.providerService.addProvider(providerId, provider);
-    this.providerService.addProvider(this.state.rtmpCustomProviderId, customProvider);
-    this.encoderService.addAudioEncoder(audioEncoderId, audioEncoder);
-    this.encoderService.addVideoEncoder(this.state.rtmpAdvEncoderId, advVideoEncoder);
-    this.encoderService.addVideoEncoder(videoEncoderId, videoEncoder);
-    this.outputService.addOutput(outputId, fOutput);
+    const advVideoEncoderId = EncoderService.getUniqueId();
+    this.encoderService.addVideoEncoder('obs_x264', advVideoEncoderId);
 
     this.outputService.setOutputProvider(outputId, providerId);
     this.outputService.setOutputVideoEncoder(outputId, videoEncoderId);
     this.outputService.setOutputAudioEncoder(outputId, audioEncoderId, 0);
 
-    /* It's vital this put succeeds or else we'll end up with
-     * multiple outputs being created. If the rtmp output doesn't
-     * know what encoder/output is associated with it, then it will
-     * just create a new one */
-
+    this.UPDATE_ADV_ENC(advVideoEncoderId);
     this.UPDATE_SIMPLE_ENC(videoEncoderId);
     this.UPDATE_COMMON_PROVIDER(providerId);
+    this.UPDATE_CUSTOM_PROVIDER(customProviderId);
     this.UPDATE_OUTPUT(outputId);
 
+    this.db.addQueue(docId);
     this.queueChange();
-    console.log('Created rtmp datbase yo');
-    console.log(this.state);
   }
 
-  private syncConfig(result: ExistingDatabaseDocument): void {
-    this.UPDATE_REVISION(result._rev);
-    this.UPDATE_ENCODER_MODE(result.rtmpEncoderMode);
-    this.UPDATE_ADV_ENC(result.rtmpAdvEncoderId);
-    this.UPDATE_SIMPLE_ENC(result.rtmpSimpleEncoderId);
-    this.UPDATE_COMMON_PROVIDER(result.rtmpCommonProviderId);
-    this.UPDATE_CUSTOM_PROVIDER(result.rtmpCustomProviderId);
-    this.UPDATE_OUTPUT(result.rtmpOutputId);
+  private syncConfig(
+    response: PouchDB.Core.AllDocsResponse<RtmpOutputContent>
+  ): void {
+    for (let i = 0; i < response.total_rows; ++i) {
+      const result = response.rows[i].doc;
 
-    console.log(this.state);
+      if (result._id !== docId) {
+        console.warn('Unknown document found in rtmp output database!');
+        continue;
+      }
+
+      this.UPDATE_ENCODER_MODE(result.rtmpEncoderMode);
+      this.UPDATE_PROVIDER_MODE(result.rtmpProviderMode);
+      this.UPDATE_ADV_ENC(result.rtmpAdvEncoderId);
+      this.UPDATE_SIMPLE_ENC(result.rtmpSimpleEncoderId);
+      this.UPDATE_COMMON_PROVIDER(result.rtmpCommonProviderId);
+      this.UPDATE_CUSTOM_PROVIDER(result.rtmpCustomProviderId);
+      this.UPDATE_OUTPUT(result.rtmpOutputId);
+
+      this.initialized = true;
+    }
+
+    if (!this.initialized) {
+      this.createConfig();
+      this.initialized = true;
+    }
   }
 
   async initialize() {
     if (this.initialized) return;
     await this.outputService.initialize();
-
-    await this.db.get(docId)
-      .then((result: ExistingDatabaseDocument) => { this.syncConfig(result); })
-      .catch((error: PouchDB.Core.Error) => { this.handleDbError(error); });
-
-    this.initialized = true;
-  }
-
-  private async handleChange(response: PouchDB.Core.Response) {
-    this.UPDATE_REVISION(response.rev);
-    
-    this.putQueue.shift();
-
-    if (this.putQueue.length > 0) {
-      this.db.put({
-        ... this.putQueue[0],
-        _id: docId,
-        _rev: response.rev
-      }).then((response) => { this.handleChange(response); });
-    }
+    await this.db.initialize(response => this.syncConfig(response));
   }
 
   private queueChange() {
-    if (this.putQueue.push({ ...this.state }) !== 1) {
-      return;
-    }
+    const change = {
+      ...this.state
+    };
 
-    this.db.put({
-      ...this.state,
-      _id: docId,
-      _rev: this.state.revision
-    }).then((response) => { this.handleChange(response); });
+    this.db.queueChange(docId, change);
   }
 
   start() {
@@ -208,10 +191,6 @@ export class RtmpOutputService extends StatefulService<RtmpOutputServiceState> {
 
   stop() {
     this.outputService.stopOutput(this.state.rtmpOutputId);
-  }
-
-  isActive(): boolean {
-    return this.outputService.isOutputActive(this.state.rtmpOutputId);
   }
 
   getAudioEncoderId(): string {
@@ -252,12 +231,13 @@ export class RtmpOutputService extends StatefulService<RtmpOutputServiceState> {
       default:
         console.warn('Unsupported mode given to setEncoderType');
     }
+
+    this.queueChange();
   }
 
   setVideoEncoderType(mode: EEncoderMode, type: string) {
     let encoderId = null;
     const newEncoderId = EncoderService.getUniqueId();
-    const newEncoder = new FVideoEncoder(type, newEncoderId);
 
     switch (mode) {
       case EEncoderMode.Advanced:
@@ -271,8 +251,13 @@ export class RtmpOutputService extends StatefulService<RtmpOutputServiceState> {
     }
 
     this.encoderService.removeVideoEncoder(encoderId);
-    this.encoderService.addVideoEncoder(newEncoderId, newEncoder);
-    this.outputService.setOutputVideoEncoder(this.state.rtmpOutputId, newEncoderId);
+    this.encoderService.addVideoEncoder(type, newEncoderId);
+
+    this.outputService.setOutputVideoEncoder(
+      this.state.rtmpOutputId,
+      newEncoderId
+    );
+
     this.queueChange();
   }
 
@@ -293,5 +278,8 @@ export class RtmpOutputService extends StatefulService<RtmpOutputServiceState> {
       default:
         console.warn('Unsupported type given to setProviderType');
     }
+
+    this.UPDATE_PROVIDER_MODE(mode);
+    this.queueChange();
   }
 }
