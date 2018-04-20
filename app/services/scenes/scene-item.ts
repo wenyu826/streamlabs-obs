@@ -21,6 +21,8 @@ import {
   TSceneNodeType
 } from './index';
 import { SceneItemNode } from './scene-node';
+import { WindowsService } from 'services/windows';
+
 /**
  * A SceneItem is a source that contains
  * all of the information about that source, and
@@ -67,6 +69,7 @@ export class SceneItem extends SceneItemNode implements ISceneItemApi {
   @Inject() protected scenesService: ScenesService;
   @Inject() private sourcesService: SourcesService;
   @Inject() private videoService: VideoService;
+  @Inject() private windowsService: WindowsService;
 
   constructor(sceneId: string, sceneItemId: string, sourceId: string) {
     super();
@@ -357,6 +360,19 @@ export class SceneItem extends SceneItemNode implements ISceneItemApi {
       height: this.height,
       crop: this.transform.crop,
       rotation: this.transform.rotation
+    });
+  }
+
+  showEditTransform() {
+    this.windowsService.showWindow({
+      componentName: 'EditTransform',
+      queryParams: {
+        sceneItemId: this.sceneItemId
+      },
+      size: {
+        width: 600,
+        height: 600
+      }
     });
   }
 

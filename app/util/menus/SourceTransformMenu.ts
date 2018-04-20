@@ -18,6 +18,15 @@ export class SourceTransformMenu extends Menu {
 
 
   appendMenuItems() {
+    if (this.selectionService.isSceneItem()) {
+      this.append({
+        label: 'Edit Transform',
+        click: () => {
+          this.selectionService.getItems()[0].showEditTransform();
+        }
+      });
+    }
+
     this.append({
       label: 'Reset Transform',
       click: () => {
