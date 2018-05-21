@@ -17,7 +17,6 @@ process.env.SLOBS_VERSION = pjson.version;
 ////////////////////////////////////////////////////////////////////////////////
 const { app, BrowserWindow, ipcMain, session, crashReporter, dialog } = require('electron');
 const fs = require('fs');
-const { Updater } = require('./updater/Updater.js');
 const uuid = require('uuid/v4');
 const rimraf = require('rimraf');
 const path = require('path');
@@ -52,12 +51,6 @@ let shutdownStarted = false;
 let appShutdownTimeout;
 
 global.indexUrl = 'file://' + __dirname + '/index.html';
-
-
-function openDevTools() {
-  childWindow.webContents.openDevTools({ mode: 'undocked' });
-  mainWindow.webContents.openDevTools({ mode: 'undocked' });
-}
 
 // Lazy require OBS
 let _obs;
@@ -136,6 +129,7 @@ function startApp() {
     title: 'Streamlabs OBS',
   });
 
+  mainWindow.webContents.openDevTools({ mode: 'undocked' });
   mainWindowState.manage(mainWindow);
 
   mainWindow.setMenu(null);
@@ -189,6 +183,8 @@ function startApp() {
     show: false,
     frame: false
   });
+
+  childWindow.webContents.openDevTools({ mode: 'undocked' });
 
   childWindow.setMenu(null);
 
@@ -311,15 +307,7 @@ if (shouldQuit) {
 }
 
 app.on('ready', () => {
-  if ((process.env.NODE_ENV === 'production') || process.env.SLOBS_FORCE_AUTO_UPDATE) {
-    (new Updater(startApp)).run();
-  } else {
     startApp();
-  }
-});
-
-ipcMain.on('openDevTools', () => {
-  openDevTools();
 });
 
 ipcMain.on('window-showChildWindow', (event, windowOptions) => {

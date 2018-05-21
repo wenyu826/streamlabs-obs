@@ -1,0 +1,68 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+    <Product
+      Id="*"
+      Name="Streamlabs OBS"
+      Language="1033"
+      Version="0.9.0"
+      UpgradeCode="{59BACAFD-CF31-411C-A75B-AC54C95D27B8}"
+      Manufacturer="General Workings, Inc.">
+        <Package
+          Platform="x64"
+          InstallerVersion="200"
+          Compressed="yes"
+          Description="Streamlabs OBS"
+          Manufacturer="General Workings, Inc." />
+        <Icon Id="icon.ico" SourceFile="SourceDir\images\icon.ico" />
+        <Property Id="ARPPRODUCTICON" Value="icon.ico" />
+        <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
+        <Feature Id="ProductFeature" Title="Streamlabs OBS" Absent="disallow" AllowAdvertise="no">
+            <ComponentGroupRef Id="SlobsComponentGroup" />
+            <Feature Id="ShortcutFeature" Title="Install start menu shortcut" AllowAdvertise="no">
+                <ComponentRef Id="StartMenuComponent" />
+            </Feature>
+            <Feature Id="DesktopFeature" Title="Install desktop shortcut" AllowAdvertise="no">
+                <ComponentRef Id="DesktopComponent" />
+            </Feature>
+        </Feature>
+        <Media Id="1" Cabinet="app.cab" EmbedCab="yes" DiskPrompt="CD-ROM #1" CompressionLevel="high" />
+        <Property Id='DiskPrompt' Value="Streamlabs 1.0 Installer" />
+        <WixVariable Id="WixUILicenseRtf" Value="eula.rtf" />
+
+        <Directory Id="TARGETDIR" Name="SourceDir">
+            <Directory Id="ProgramFiles64Folder">
+                <Directory Id="APPLICATIONFOLDER" Name="Streamlabs OBS" />
+            </Directory>
+            <Directory Id="ProgramMenuFolder" />
+            <Directory Id="DesktopFolder" />
+        </Directory>
+
+        <DirectoryRef Id="ProgramMenuFolder">
+            <Component Id="StartMenuComponent" Guid="{04520B67-7423-4100-A928-85E332CFD459}">
+                <Shortcut Id="StartMenuShortcut"
+                  Name="Streamlabs OBS"
+                  Description="Streamlabs OBS"
+                  Target="[!Streamlabs_OBS.exe]"
+                  WorkingDirectory="APPLICATIONFOLDER" />
+                <RemoveFolder Id="ProgramMenuFolder" On="uninstall" />
+                <RegistryValue Root="HKCU" Key="Software\Streamlabs\[ProductName]" Name="ProgramMenuShortcut" Type="integer" Value="1" KeyPath="yes" />
+           </Component>
+        </DirectoryRef>
+
+        <DirectoryRef Id="DesktopFolder">
+            <Component Id="DesktopComponent" Guid="{E14E3D9D-2EC5-4AA0-92FE-6DD70CE7905C}">
+                <Shortcut Id="DesktopShortcut"
+                  Name="Streamlabs OBS"
+                  Description="Streamlabs OBS"
+                  Target="[!Streamlabs_OBS.exe]"
+                  WorkingDirectory="APPLICATIONFOLDER" />
+                <RemoveFolder Id="DesktopFolder" On="uninstall"/>
+                <RegistryValue Root="HKCU" Key="Software\Streamlabs\[ProductName]" Name="DesktopShortcut" Type="integer" Value="1" KeyPath="yes" />
+           </Component>
+        </DirectoryRef>
+
+        <Property Id="WixAppFolder" Value="WixPerMachineFolder" />
+        <Property Id="ApplicationFolderName" Value="Streamlabs OBS" />
+        <UIRef Id="WixUI_Advanced" />
+    </Product>
+</Wix>

@@ -3,9 +3,12 @@
   "description": "Streamlabs streaming software",
   "author": "General Workings, Inc.",
   "license": "GPL-3.0",
+  "env": "production",
   "version": "0.9.1",
   "main": "main.js",
   "scripts": {
+    "build:dist": "rm -rf dist && node bin/build_dist.js",
+    "build:installer": "node bin/build_installer.js",
     "compile": "yarn clear && webpack-cli --progress --mode development",
     "compile:ci": "yarn clear && webpack-cli --mode development",
     "compile:production": "yarn clear && webpack-cli --progress --mode production",
@@ -13,48 +16,12 @@
     "start": "electron .",
     "install-plugins": "yarn install --cwd bin && node bin/install-plugins.js",
     "clear-plugins": "rm -rf plugins",
-    "package": "rm -rf dist && build -w --x64 --config.extraMetadata.env=production",
-    "package:preview": "rm -rf dist && build -w --x64 --config.extraMetadata.env=production --config.extraMetadata.name=\"slobs-client-preview\" --config.productName=\"Streamlabs OBS Preview\" --config.appId=\"com.streamlabs.slobspreview\"",
     "release": "yarn install --cwd bin && node bin/release.js",
     "test": "tsc -p test && ava -v",
     "clear": "rm -rf bundles/media",
     "typedoc": "typedoc --out docs/dist ./app/services --mode modules --theme ./docs/theme --readme ./docs/README.md --ignoreCompilerErrors --excludePrivate --excludeExternals --hideGenerator",
     "compile-tests": "tsc -p test",
     "screentest": "node test/screentest/runner.js"
-  },
-  "build": {
-    "appId": "com.streamlabs.slobs",
-    "productName": "Streamlabs OBS",
-    "icon": "media/images/icon.ico",
-    "files": [
-      "bundles",
-      "node_modules",
-      "vendor",
-      "updater/index.html",
-      "updater/Updater.js",
-      "index.html",
-      "main.js",
-      "obs-api"
-    ],
-    "extraFiles": [
-      "i18n",
-      "LICENSE",
-      "AGREEMENT"
-    ],
-    "publish": {
-      "provider": "generic",
-      "url": "https://d1g6eog1uhe0xm.cloudfront.net"
-    },
-    "nsis": {
-      "license": "AGREEMENT",
-      "oneClick": false,
-      "perMachine": true,
-      "allowToChangeInstallationDirectory": true,
-      "include": "installer.nsh"
-    },
-    "win": {
-      "rfc3161TimeStampServer": "http://timestamp.digicert.com"
-    }
   },
   "ava": {
     "files": [
@@ -71,7 +38,6 @@
   "dependencies": {
     "aws-sdk": "^2.43.0",
     "backtrace-node": "^0.7.3",
-    "electron-updater": "^2.21.1",
     "electron-window-state": "^4.1.1",
     "font-manager": "git+https://github.com/computerquip-streamlabs/font-manager.git",
     "node-fontinfo": "^0.0.2",
@@ -106,8 +72,8 @@
     "css-loader": "^0.28.7",
     "devtron": "^1.4.0",
     "electron": "2.0.1",
-    "electron-builder": "20.6.1",
     "electron-devtools-installer": "^2.2.1",
+    "electron-packager": "12.1.0",
     "eslint": "^3.19.0",
     "eslint-config-airbnb": "^14.1.0",
     "eslint-plugin-import": "^2.2.0",
