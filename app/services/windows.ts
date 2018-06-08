@@ -21,6 +21,7 @@ import Blank from 'components/windows/Blank.vue';
 import ManageSceneCollections from 'components/windows/ManageSceneCollections.vue';
 import RecentEvents from 'components/windows/RecentEvents.vue';
 import Projector from 'components/windows/Projector.vue';
+import BrowserSourceInteraction from 'components/windows/BrowserSourceInteraction.vue';
 import { mutation, StatefulService } from 'services/stateful-service';
 import electron from 'electron';
 import Vue from 'vue';
@@ -87,6 +88,7 @@ export class WindowsService extends StatefulService<IWindowsState> {
     Troubleshooter,
     ManageSceneCollections,
     Projector,
+    BrowserSourceInteraction,
     RecentEvents
   };
 

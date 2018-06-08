@@ -153,6 +153,23 @@ export class Source implements ISourceApi {
     return this.getObsInput().configurable;
   }
 
+  mouseMove(pos: IVec2) {
+    this.getObsInput().sendMouseMove({
+      modifiers: 0,
+      x: Math.floor(pos.x),
+      y: Math.floor(pos.y)
+    }, false);
+  }
+
+  mouseClick(pos: IVec2) {
+    console.log(pos);
+    this.getObsInput().sendMouseClick({
+      modifiers: 1 << 4,
+      x: Math.floor(pos.x),
+      y: Math.floor(pos.y)
+    }, 0, false, 1);
+  }
+
 
   @Inject()
   protected sourcesService: SourcesService;

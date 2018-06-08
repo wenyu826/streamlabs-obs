@@ -39,6 +39,8 @@ export interface ISourceApi extends ISource {
   setPropertiesManagerSettings(settings: Dictionary<any>): void;
   hasProps(): boolean;
   setName(newName: string): void;
+  mouseMove(pos: IVec2): void;
+  mouseClick(pos: IVec2): void;
 }
 
 
