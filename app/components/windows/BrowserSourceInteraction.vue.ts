@@ -41,11 +41,11 @@ export default class BrowserSourceInteraction extends Vue {
   }
 
   handleMouseDown(e: MouseEvent) {
-    this.source.mouseClick(this.eventLocationInSourceSpace(e), false);
+    this.source.mouseClick(e.button, this.eventLocationInSourceSpace(e), false);
   }
 
   handleMouseUp(e: MouseEvent) {
-    this.source.mouseClick(this.eventLocationInSourceSpace(e), true);
+    this.source.mouseClick(e.button, this.eventLocationInSourceSpace(e), true);
   }
 
   handleMouseMove(e: MouseEvent) {

@@ -169,12 +169,26 @@ export class Source implements ISourceApi {
    * Used for browser source interaction
    * @param pos the position in source space
    */
-  mouseClick(pos: IVec2, mouseUp: boolean) {
+  mouseClick(button: number, pos: IVec2, mouseUp: boolean) {
+    let obsFlags: obs.EInteractionFlags;
+    let obsButton: obs.EMouseButtonType;
+
+    if (button === 0) {
+      obsFlags = obs.EInteractionFlags.MouseLeft;
+      obsButton = obs.EMouseButtonType.Left;
+    } else if (button === 1) {
+      obsFlags = obs.EInteractionFlags.MouseMiddle;
+      obsButton = obs.EMouseButtonType.Middle;
+    } else if (button === 2) {
+      obsFlags = obs.EInteractionFlags.MouseRight;
+      obsButton = obs.EMouseButtonType.Right;
+    }
+
     this.getObsInput().sendMouseClick({
-      modifiers: 1 << 4,
+      modifiers: obsFlags,
       x: Math.floor(pos.x),
       y: Math.floor(pos.y)
-    }, 0, mouseUp, 1);
+    }, obsButton, mouseUp, 1);
   }
 
   mouseWheel(pos: IVec2, delta: IVec2) {
@@ -182,7 +196,7 @@ export class Source implements ISourceApi {
 
     this.getObsInput().sendMouseWheel(
       {
-        modifiers: 0,
+        modifiers: obs.EInteractionFlags.None,
         x: Math.floor(pos.x),
         y: Math.floor(pos.y)
       },
