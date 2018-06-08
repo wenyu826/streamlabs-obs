@@ -33,24 +33,40 @@ export default class BrowserSourceInteraction extends Vue {
     return this.sourcesService.getSource(this.sourceId);
   }
 
-  handleClick(e: MouseEvent) {
-    console.log('got click', e);
+  currentRegion: IRectangle = { x: 0, y: 0, width: 1, height: 1 };
 
-    this.source.mouseClick(this.eventLocationInSourceSpace(e));
+  onOutputResize(region: IRectangle) {
+    console.log('output resize', region);
+    this.currentRegion = region;
+  }
+
+  handleMouseDown(e: MouseEvent) {
+    this.source.mouseClick(this.eventLocationInSourceSpace(e), false);
+  }
+
+  handleMouseUp(e: MouseEvent) {
+    this.source.mouseClick(this.eventLocationInSourceSpace(e), true);
   }
 
   handleMouseMove(e: MouseEvent) {
-    console.log('got move', e);
-
     this.source.mouseMove(this.eventLocationInSourceSpace(e));
   }
 
-  eventLocationInSourceSpace(e: MouseEvent): IVec2 {
-    const rect = this.$refs.display.getBoundingClientRect();
+  handleWheel(e: WheelEvent) {
+    console.log(e);
+    this.source.mouseWheel(
+      this.eventLocationInSourceSpace(e),
+      {
+        x: e.deltaX,
+        y: e.deltaY
+      }
+    );
+  }
 
+  eventLocationInSourceSpace(e: MouseEvent): IVec2 {
     return {
-      x: e.offsetX / rect.width * this.source.width,
-      y: e.offsetY / rect.height * this.source.height
+      x: (e.offsetX - this.currentRegion.x) / this.currentRegion.width * this.source.width,
+      y: (e.offsetY - this.currentRegion.y) / this.currentRegion.height * this.source.height
     };
   }
 

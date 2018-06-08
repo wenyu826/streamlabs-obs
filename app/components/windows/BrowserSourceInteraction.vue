@@ -7,9 +7,11 @@
     slot="content"
     class="source-interaction-display"
     ref="display"
-    @click="handleClick"
+    @wheel="handleWheel"
+    @mousedown="handleMouseDown"
+    @mouseup="handleMouseUp"
     @mousemove="handleMouseMove">
-    <display :source-id="sourceId"/>
+    <display :source-id="sourceId" @outputResize="onOutputResize"/>
   </div>
 </modal-layout>
 </template>

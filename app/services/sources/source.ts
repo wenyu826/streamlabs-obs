@@ -153,6 +153,10 @@ export class Source implements ISourceApi {
     return this.getObsInput().configurable;
   }
 
+  /**
+   * Used for browser source interaction
+   * @param pos the position in source space
+   */
   mouseMove(pos: IVec2) {
     this.getObsInput().sendMouseMove({
       modifiers: 0,
@@ -161,15 +165,31 @@ export class Source implements ISourceApi {
     }, false);
   }
 
-  mouseClick(pos: IVec2) {
-    console.log(pos);
+  /**
+   * Used for browser source interaction
+   * @param pos the position in source space
+   */
+  mouseClick(pos: IVec2, mouseUp: boolean) {
     this.getObsInput().sendMouseClick({
       modifiers: 1 << 4,
       x: Math.floor(pos.x),
       y: Math.floor(pos.y)
-    }, 0, false, 1);
+    }, 0, mouseUp, 1);
   }
 
+  mouseWheel(pos: IVec2, delta: IVec2) {
+    console.log(pos, delta);
+
+    this.getObsInput().sendMouseWheel(
+      {
+        modifiers: 0,
+        x: Math.floor(pos.x),
+        y: Math.floor(pos.y)
+      },
+      0, // X scrolling is currently unsupported
+      Math.floor(delta.y) * -1
+    );
+  }
 
   @Inject()
   protected sourcesService: SourcesService;

@@ -40,7 +40,8 @@ export interface ISourceApi extends ISource {
   hasProps(): boolean;
   setName(newName: string): void;
   mouseMove(pos: IVec2): void;
-  mouseClick(pos: IVec2): void;
+  mouseClick(pos: IVec2, mouseUp: boolean): void;
+  mouseWheel(pos: IVec2, delta: IVec2): void;
 }
 
 
