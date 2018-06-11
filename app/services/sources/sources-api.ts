@@ -42,6 +42,7 @@ export interface ISourceApi extends ISource {
   mouseMove(pos: IVec2): void;
   mouseClick(buttons: number, pos: IVec2, mouseUp: boolean): void;
   mouseWheel(pos: IVec2, delta: IVec2): void;
+  keyInput(key: string, keyup: boolean): void;
 }
 
 

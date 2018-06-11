@@ -63,6 +63,15 @@ export default class BrowserSourceInteraction extends Vue {
     );
   }
 
+  handleKeyDown(e: KeyboardEvent) {
+    console.log(e);
+    this.source.keyInput(e.key, false);
+  }
+
+  handleKeyUp(e: KeyboardEvent) {
+    this.source.keyInput(e.key, true);
+  }
+
   eventLocationInSourceSpace(e: MouseEvent): IVec2 {
     return {
       x: (e.offsetX - this.currentRegion.x) / this.currentRegion.width * this.source.width,

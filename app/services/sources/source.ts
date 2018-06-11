@@ -205,6 +205,16 @@ export class Source implements ISourceApi {
     );
   }
 
+  keyInput(key: string, keyup: boolean) {
+    this.getObsInput().sendKeyClick({
+      modifiers: 0,
+      text: key,
+      nativeModifiers: 0,
+      nativeScancode: 0,
+      nativeVkey: 0
+    }, keyup);
+  }
+
   @Inject()
   protected sourcesService: SourcesService;
 

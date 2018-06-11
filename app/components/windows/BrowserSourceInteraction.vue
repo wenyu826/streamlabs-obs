@@ -10,7 +10,9 @@
     @wheel="handleWheel"
     @mousedown="handleMouseDown"
     @mouseup="handleMouseUp"
-    @mousemove="handleMouseMove">
+    @mousemove="handleMouseMove"
+    @keydown="handleKeyDown"
+    @keyup="handleKeyUp">
     <display :source-id="sourceId" @outputResize="onOutputResize"/>
   </div>
 </modal-layout>
