@@ -82,6 +82,9 @@
                           <span class="show-for-sr">Small Portions Only</span>
                         </label>
                       </div>
+      <div class="input-label">
+            <label>Tweet when I go live</label>
+          </div>
       <TextInput v-if="switchOn" v-model="tweetDescriptionModel" />
 
       <BoolInput v-model="doNotShowAgainModel" v-if="!midStreamMode"/>

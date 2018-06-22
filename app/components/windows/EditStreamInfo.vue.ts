@@ -66,7 +66,7 @@ export default class EditStreamInfo extends Vue {
 
   tweetDescriptionModel: ITextInputValue = {
     name: 'tweet_description',
-    description: 'Tweet',
+    description: '',
     value: '',
     multiline: true
   };
