@@ -75,6 +75,15 @@
           </div>
         </div>
       </div>
+
+                        <div class="switch">
+                        <input v-model="switchOn" class="switch-input" id="smallSwitch" type="checkbox" name="exampleSwitch">
+                        <label class="switch-paddle" for="smallSwitch">
+                          <span class="show-for-sr">Small Portions Only</span>
+                        </label>
+                      </div>
+      <TextInput v-if="switchOn" v-model="tweetDescriptionModel" />
+
       <BoolInput v-model="doNotShowAgainModel" v-if="!midStreamMode"/>
       <div class="warning" v-if="updateError">
         <div v-if="midStreamMode">
@@ -103,9 +112,12 @@
     </button>
   </div>
 </modal-layout>
+
 </template>
 
-<script lang="ts" src="./EditStreamInfo.vue.ts"></script>
+
+<script lang="ts" src="./EditStreamInfo.vue.ts">
+</script>
 
 <style lang="less" scoped>
 @import "../../styles/index";
@@ -119,12 +131,52 @@
   height: 13px;
   line-height: 13px;
   font-size: 11px;
-  color: @grey;
+  color: #91979a;
 }
+
+.switch {
+  height: 12px;
+  margin: 4px 0;
+
+  label {
+    margin-bottom: 0;
+  }
+}
+
+.switch-paddle {
+  border-radius: 50px;
+  background: gray;
+  width: 34px;
+  height: 12px;
+  margin-bottom: 16px;
+
+  &::after {
+    border-radius: 50px;
+    background: white;
+    top: -4px;
+    left: 0px;
+    height: 18px;
+    width: 18px;
+    font-size: 9px;
+    line-height: 9px;
+    text-transform: uppercase;
+    text-align: center;
+  }
+}
+
+input:checked ~ .switch-paddle {
+  background: #32c3a2;
+}
+
+input:checked ~ .switch-paddle::after {
+  left: 19px;
+}
+
+
 
 .night-theme {
   .edit-stream-info-option-longdes {
-    color: @night-text;
+    color: gray;
   }
 }
 </style>

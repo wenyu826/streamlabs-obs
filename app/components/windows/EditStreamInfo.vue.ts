@@ -54,6 +54,7 @@ export default class EditStreamInfo extends Vue {
   areAvailableProfiles = false;
   useOptimizedProfile = false;
   isGenericProfiles = false;
+  switchOn = false;
 
   // Form Models:
 
@@ -63,6 +64,12 @@ export default class EditStreamInfo extends Vue {
     value: ''
   };
 
+  tweetDescriptionModel: ITextInputValue = {
+    name: 'tweet_description',
+    description: 'Tweet',
+    value: '',
+    multiline: true
+  };
   streamDescriptionModel: ITextInputValue = {
     name: 'stream_description',
     description: 'Description',
@@ -167,7 +174,6 @@ export default class EditStreamInfo extends Vue {
       }
     }
   }
-
   // For some reason, v-model doesn't work with ListInput
   onGameInput(gameModel: IListInput<string>) {
     this.gameModel = gameModel;
@@ -218,7 +224,6 @@ export default class EditStreamInfo extends Vue {
   cancel() {
     this.windowsService.closeChildWindow();
   }
-
   // This should have been pre-fetched, but we can force a refresh
   refreshStreamInfo() {
     this.streamInfoService.refreshStreamInfo().then(() => {
