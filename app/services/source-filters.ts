@@ -10,6 +10,7 @@ import * as obs from '../../obs-api';
 import namingHelpers from '../util/NamingHelpers';
 import { $t } from 'services/i18n';
 import { EOrderMovement } from 'obs-studio-node';
+import { filter } from '../../node_modules/@types/minimatch';
 
 
 export type TSourceFilterType =
@@ -109,15 +110,18 @@ export class SourceFiltersService extends Service {
   getTypesForSource(sourceId: string): ISourceFilterType[] {
     const source = this.sourcesService.getSource(sourceId);
     return this.getTypes().filter(filterType => {
-      let asyncCompat = true;
+      const sourceVideoOnly = !source.audio && source.video;
+      const sourceAudioOnly = source.audio && !source.video;
+      /* A filter is either video or audio */
+      if (sourceVideoOnly && !filterType.video) return false;
+      if (sourceAudioOnly && !filterType.audio) return false;
 
-      if (filterType.async === true)
-        if (source.async === false)
-          asyncCompat = false;
+      if (!source.async && !source.audio && (filterType.audio || filterType.async)) {
+        console.log(`Rejecting ${filterType.description}`)
+        return false;
+      }
 
-      return ((filterType.audio && source.audio) ||
-        (filterType.video && source.video)) &&
-        asyncCompat;
+      return true;
     });
   }
 
