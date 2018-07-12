@@ -20,6 +20,8 @@ import RavenVue from 'raven-js/plugins/vue';
 import RavenConsole from 'raven-js/plugins/console';
 import VTooltip from 'v-tooltip';
 import VueI18n from 'vue-i18n';
+import VModal from 'vue-js-modal';
+import VeeValidate from 'vee-validate';
 
 const { ipcRenderer, remote } = electron;
 
@@ -83,6 +85,10 @@ require('./app.less');
 // Initiates tooltips and sets their parent wrapper
 Vue.use(VTooltip);
 VTooltip.options.defaultContainer = '#mainWrapper';
+
+Vue.use(VModal);
+Vue.use(VeeValidate);
+
 
 // Disable chrome default drag/drop behavior
 document.addEventListener('dragover', event => event.preventDefault());
