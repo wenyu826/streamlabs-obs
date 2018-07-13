@@ -66,7 +66,7 @@
   },
   "cmake-js": {
     "runtime": "electron",
-    "runtimeVersion": "3.0.0-beta.1",
+    "runtimeVersion": "3.0.0-beta.2",
     "arch": "x64"
   },
   "dependencies": {
@@ -78,7 +78,7 @@
     "node-fontinfo": "^0.0.2",
     "node-gyp": "^3.6.2",
     "node-libuiohook": "file:./node-libuiohook",
-    "obs-studio-node": "https://ci.appveyor.com/api/buildjobs/egev1161mex5s3yh/artifacts/iojs-v3.0.0-beta.1-unsigned.tar.gz",
+    "obs-studio-node": "https://github.com/stream-labs/obs-studio-node/releases/download/v0.0.43/iojs-v3.0.0-beta.2-signed.tar.gz",
     "recursive-readdir": "^2.2.2",
     "request": "^2.85.0",
     "rimraf": "^2.6.1",
@@ -110,7 +110,7 @@
     "circular-dependency-plugin": "^3.0.0",
     "css-loader": "^0.28.7",
     "devtron": "^1.4.0",
-    "electron": "3.0.0-beta.1",
+    "electron": "3.0.0-beta.2",
     "electron-builder": "20.6.1",
     "electron-devtools-installer": "^2.2.1",
     "eslint": "^3.19.0",

@@ -257,22 +257,7 @@ function startApp() {
     });
   });
 
-
-  if (isDevMode) {
-    require('devtron').install();
-
-    // Vue dev tools appears to cause strange non-deterministic
-    // interference with certain NodeJS APIs, expecially asynchronous
-    // IO from the renderer process.  Enable at your own risk.
-
-    // const devtoolsInstaller = require('electron-devtools-installer');
-    // devtoolsInstaller.default(devtoolsInstaller.VUEJS_DEVTOOLS);
-
-    // setTimeout(() => {
-    //   openDevTools();
-    // }, 10 * 1000);
-
-  }
+  openDevTools();
 
   // Initialize various OBS services
   getObs().SetWorkingDirectory(
@@ -291,7 +276,7 @@ app.setPath('userData', path.join(app.getPath('appData'), 'slobs-client'));
 app.setAsDefaultProtocolClient('slobs');
 
 // This ensures that only one copy of our app can run at once.
-const shouldQuit = app.makeSingleInstance(argv => {
+function handleSecondInstance(wtfisthis, argv) {
   // Check for protocol links in the argv of the other process
   argv.forEach(arg => {
     if (arg.match(/^slobs:\/\//)) {
@@ -299,7 +284,7 @@ const shouldQuit = app.makeSingleInstance(argv => {
     }
   });
 
-  // Someone tried to run a second instance, we should focus our window.
+  // Focus our current window instead of making a new instance.
   if (mainWindow) {
     if (mainWindow.isMinimized()) {
       mainWindow.restore();
@@ -307,18 +292,16 @@ const shouldQuit = app.makeSingleInstance(argv => {
 
     mainWindow.focus();
   }
-});
+}
 
-if (shouldQuit) {
+if (app.requestSingleInstanceLock()) {
+  app.on('second-instance', handleSecondInstance);
+} else {
   app.exit();
 }
 
 app.on('ready', () => {
-  if ((process.env.NODE_ENV === 'production') || process.env.SLOBS_FORCE_AUTO_UPDATE) {
-    (new Updater(startApp)).run();
-  } else {
-    startApp();
-  }
+  startApp();
 });
 
 ipcMain.on('openDevTools', () => {
