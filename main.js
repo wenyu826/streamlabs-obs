@@ -73,6 +73,51 @@ function getObs() {
   return _obs;
 }
 
+function registerCurrentProcess(isCritial = false) {
+  // Register process
+
+  // Create buffer
+  const action = 0;
+  const sizeOfInt = 8;
+
+  const pid = require('process').pid;
+
+  const buffer = new Buffer(512);
+  let offset = 0;
+  buffer.writeUInt32LE(action, offset++);
+  buffer.writeUInt32LE(sizeOfInt, offset++);
+  buffer.writeUInt32LE(0, offset++);
+  buffer.writeUInt32LE(0, offset++);
+  buffer.writeUInt32LE(0, offset++);
+  buffer.writeUInt32LE(0, offset++);
+  buffer.writeUInt32LE(0, offset++);
+  buffer.writeUInt32LE(0, offset++);
+  buffer.writeUInt32LE(0, offset++);
+  buffer.writeUInt32LE(isCritial, offset++);
+  buffer.writeUInt32LE(pid, offset++);
+
+  const EventEmitter = require('events');
+  const event = new EventEmitter();
+
+  const net = require('net');
+  const ref = setTimeout(() => {
+    try {
+      const socket = net.connect('\\\\.\\pipe\\slobs-crash-handler', () => {
+        console.log('Writting into the socket');
+        socket.write(buffer);
+        // socket.end();
+        event.emit('connected');
+      });
+    } catch (error) {
+      
+    }
+  }, 100);
+
+  event.on('connected', () => { 
+    clearTimeout(ref); 
+  });
+}
+
 
 function startApp() {
   const isDevMode = (process.env.NODE_ENV !== 'production') && (process.env.NODE_ENV !== 'test');
@@ -269,10 +314,22 @@ function startApp() {
     // devtoolsInstaller.default(devtoolsInstaller.VUEJS_DEVTOOLS);
 
     // setTimeout(() => {
-    //   openDevTools();
+      openDevTools();
     // }, 10 * 1000);
 
   }
+
+  // Spawn crash-handler process
+ /* const { spawn } = require('child_process');
+
+  const subprocess = spawn('C:\\Users\\eddyg\\streamlabs\\crash-handler\\build\\Debug\\crash-handler.exe', {
+    detached: true,
+    stdio: 'ignore'
+  });
+
+  subprocess.unref();*/
+
+  registerCurrentProcess(true);
 
   // Initialize various OBS services
   getObs().SetWorkingDirectory(
