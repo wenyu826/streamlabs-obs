@@ -79,6 +79,7 @@ import { ChatBoxService } from 'services/widget-settings/chat-box';
 import { DonationGoalService } from 'services/widget-settings/donation-goal';
 import { FollowerGoalService } from 'services/widget-settings/follower-goal';
 import { ViewerCountService } from 'services/widget-settings/viewer-count';
+import { TipJarService } from 'services/widget-settings/tip-jar';
 
 const { ipcRenderer } = electron;
 
@@ -159,6 +160,7 @@ export class ServicesManager extends Service {
     FollowerGoalService,
     ChatBoxService,
     ViewerCountService,
+    TipJarService,
     MediaGalleryService
   };
 
