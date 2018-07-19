@@ -15,7 +15,7 @@
 
   <transition name="slide-fade">
     <div
-      :style="liveDockStyles"
+      v-show="!collapsed"
       class="live-dock-expanded-contents">
       <div
         class="live-dock-chevron icon-btn"
