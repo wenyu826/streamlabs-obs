@@ -73,6 +73,27 @@ function getObs() {
   return _obs;
 }
 
+function tryConnect(buffer, attempt = 5, waitMs = 100) {
+  const net = require('net');
+  const socket = net.connect('\\\\.\\pipe\\slobs-crash-handler');
+
+  socket.on('connect', () => {
+    socket.write(buffer);
+    socket.destroy();
+    socket.unref();
+  });
+
+  socket.on('error', () => {
+    socket.destroy();
+    socket.unref();
+    if (attempt > 0) {
+      setTimeout(() => {
+        tryConnect(buffer, attempt - 1, waitMs * 2);
+      }, waitMs);
+    }
+  });
+}
+
 function registerCurrentProcess(isCritial = false) {
   // Register process
 
@@ -95,29 +116,9 @@ function registerCurrentProcess(isCritial = false) {
   buffer.writeUInt32LE(0, offset++);
   buffer.writeUInt32LE(isCritial, offset++);
   buffer.writeUInt32LE(pid, offset++);
-
-  const EventEmitter = require('events');
-  const event = new EventEmitter();
-
-  const net = require('net');
-  const ref = setTimeout(() => {
-    try {
-      const socket = net.connect('\\\\.\\pipe\\slobs-crash-handler', () => {
-        console.log('Writting into the socket');
-        socket.write(buffer);
-        // socket.end();
-        event.emit('connected');
-      });
-    } catch (error) {
-      
-    }
-  }, 100);
-
-  event.on('connected', () => { 
-    clearTimeout(ref); 
-  });
+ 
+  tryConnect(buffer);
 }
-
 
 function startApp() {
   const isDevMode = (process.env.NODE_ENV !== 'production') && (process.env.NODE_ENV !== 'test');
@@ -153,18 +154,18 @@ function startApp() {
 
     process.on('uncaughtException', handleUnhandledException);
 
-    crashReporter.start({
-      productName: 'streamlabs-obs',
-      companyName: 'streamlabs',
-      submitURL:
-        'https://streamlabs.sp.backtrace.io:6098/post?' +
-        'format=minidump&' +
-        'token=e3f92ff3be69381afe2718f94c56da4644567935cc52dec601cf82b3f52a06ce',
-      extra: {
-        version: pjson.version,
-        processType: 'main'
-      }
-    });
+    // crashReporter.start({
+    //   productName: 'streamlabs-obs',
+    //   companyName: 'streamlabs',
+    //   submitURL:
+    //     'https://streamlabs.sp.backtrace.io:6098/post?' +
+    //     'format=minidump&' +
+    //     'token=e3f92ff3be69381afe2718f94c56da4644567935cc52dec601cf82b3f52a06ce',
+    //   extra: {
+    //     version: pjson.version,
+    //     processType: 'main'
+    //   }
+    // });
   }
 
   const mainWindowState = windowStateKeeper({
@@ -320,15 +321,15 @@ function startApp() {
   }
 
   // Spawn crash-handler process
- /* const { spawn } = require('child_process');
+  const { spawn } = require('child_process');
 
-  const subprocess = spawn('C:\\Users\\eddyg\\streamlabs\\crash-handler\\build\\Debug\\crash-handler.exe', {
+  const subprocess = spawn('./crash-handler.exe', {
     detached: true,
     stdio: 'ignore'
   });
-
-  subprocess.unref();*/
-
+  
+  subprocess.unref();
+  
   registerCurrentProcess(true);
 
   // Initialize various OBS services
@@ -371,11 +372,11 @@ if (shouldQuit) {
 }
 
 app.on('ready', () => {
-  if ((process.env.NODE_ENV === 'production') || process.env.SLOBS_FORCE_AUTO_UPDATE) {
-    (new Updater(startApp)).run();
-  } else {
+  // if ((process.env.NODE_ENV === 'production') || process.env.SLOBS_FORCE_AUTO_UPDATE) {
+  //   (new Updater(startApp)).run();
+  // } else {
     startApp();
-  }
+  // }
 });
 
 ipcMain.on('openDevTools', () => {
