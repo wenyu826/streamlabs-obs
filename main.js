@@ -120,6 +120,15 @@ function registerCurrentProcess(isCritial = false) {
   tryConnect(buffer);
 }
 
+function exitProcess() {
+  const action = 2;
+  const buffer = new Buffer(512);
+
+  buffer.writeUInt32LE(action, 0);
+  
+  tryConnect(buffer);
+}
+
 function startApp() {
   const isDevMode = (process.env.NODE_ENV !== 'production') && (process.env.NODE_ENV !== 'test');
 
@@ -200,6 +209,7 @@ function startApp() {
   mainWindow.on('close', e => {
     if (!shutdownStarted) {
       shutdownStarted = true;
+      exitProcess();
       childWindow.destroy();
       mainWindow.send('shutdown');
 
