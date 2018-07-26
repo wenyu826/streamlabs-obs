@@ -238,6 +238,10 @@ export default class EditStreamInfo extends Vue {
     return this.userService.platform.type === 'mixer';
   }
 
+  get isFacebook() {
+    return this.userService.platform.type === 'facebook';
+  }
+
   get submitText() {
     if (this.midStreamMode) return 'Update';
 
