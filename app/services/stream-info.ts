@@ -8,6 +8,7 @@ import { YoutubeService } from 'services/platforms/youtube';
 import { MixerService } from 'services/platforms/mixer';
 import { HostsService } from 'services/hosts';
 import { authorizedHeaders } from 'util/requests';
+import { FacebookService } from './platforms/facebook';
 
 
 interface IStreamInfoServiceState {
@@ -79,11 +80,11 @@ export class StreamInfoService extends StatefulService<IStreamInfoServiceState> 
     const platform = getPlatformService(this.userService.platform.type);
     let promise: Promise<boolean>;
 
-    if (platform instanceof TwitchService || MixerService) {
+    if (platform instanceof TwitchService || platform instanceof MixerService) {
       promise = platform.putChannelInfo(title, game);
     }
 
-    if (platform instanceof YoutubeService) {
+    if (platform instanceof YoutubeService || platform instanceof FacebookService) {
       promise = platform.putChannelInfo(title, description);
     }
 
