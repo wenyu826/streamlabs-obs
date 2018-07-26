@@ -16,6 +16,13 @@ import {
 import { UsageStatisticsService } from 'services/usage-statistics';
 import { $t } from 'services/i18n';
 import { StreamInfoService }from 'services/stream-info';
+import {
+  getPlatformService,
+  IPlatformAuth,
+  TPlatform,
+  IPlatformService
+} from './../platforms';
+import { UserService } from '../user';
 
 enum EOBSOutputType {
   Streaming = 'streaming',
@@ -45,6 +52,7 @@ export class StreamingService extends StatefulService<IStreamingServiceState>
   @Inject() windowsService: WindowsService;
   @Inject() usageStatisticsService: UsageStatisticsService;
   @Inject() streamInfoService: StreamInfoService;
+  @Inject() userService: UserService;
 
   streamingStatusChange = new Subject<EStreamingState>();
   recordingStatusChange = new Subject<ERecordingState>();
@@ -95,30 +103,64 @@ export class StreamingService extends StatefulService<IStreamingServiceState>
     this.toggleStreaming();
   }
 
+  finishStartStreaming() {
+    const shouldConfirm = this.settingsService.state.General
+      .WarnBeforeStartingStream;
+    const confirmText = 'Are you sure you want to start streaming?';
+
+    if (shouldConfirm && !confirm(confirmText)) return;
+
+    this.powerSaveId = electron.remote.powerSaveBlocker.start(
+      'prevent-display-sleep'
+    );
+    this.obsApiService.nodeObs.OBS_service_startStreaming();
+
+    const recordWhenStreaming = this.settingsService.state.General
+      .RecordWhenStreaming;
+
+    if (
+      recordWhenStreaming &&
+      this.state.recordingStatus === ERecordingState.Offline
+    ) {
+      this.toggleRecording();
+    }
+
+    return;
+  }
+
   toggleStreaming() {
     if (this.state.streamingStatus === EStreamingState.Offline) {
-      const shouldConfirm = this.settingsService.state.General
-        .WarnBeforeStartingStream;
-      const confirmText = 'Are you sure you want to start streaming?';
-
-      if (shouldConfirm && !confirm(confirmText)) return;
-
-      this.powerSaveId = electron.remote.powerSaveBlocker.start(
-        'prevent-display-sleep'
-      );
-      this.obsApiService.nodeObs.OBS_service_startStreaming();
-
-      const recordWhenStreaming = this.settingsService.state.General
-        .RecordWhenStreaming;
-
-      if (
-        recordWhenStreaming &&
-        this.state.recordingStatus === ERecordingState.Offline
-      ) {
-        this.toggleRecording();
+      console.log(this.userService);
+      console.log(this.userService.isLoggedIn());
+      console.log(this.userService.platform);
+      if (this.userService.isLoggedIn) {
+        const service = getPlatformService(this.userService.platform.type);
+        service.beforeGoLive().then(() => this.finishStartStreaming());
+        return;
       }
+      this.finishStartStreaming();
+      // const shouldConfirm = this.settingsService.state.General
+      //   .WarnBeforeStartingStream;
+      // const confirmText = 'Are you sure you want to start streaming?';
 
-      return;
+      // if (shouldConfirm && !confirm(confirmText)) return;
+
+      // this.powerSaveId = electron.remote.powerSaveBlocker.start(
+      //   'prevent-display-sleep'
+      // );
+      // this.obsApiService.nodeObs.OBS_service_startStreaming();
+
+      // const recordWhenStreaming = this.settingsService.state.General
+      //   .RecordWhenStreaming;
+
+      // if (
+      //   recordWhenStreaming &&
+      //   this.state.recordingStatus === ERecordingState.Offline
+      // ) {
+      //   this.toggleRecording();
+      // }
+
+      // return;
     }
 
     if (

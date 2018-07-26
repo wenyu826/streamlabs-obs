@@ -176,4 +176,8 @@ export class TwitchService extends Service implements IPlatformService {
       .then(json => json.results[0].hits);
   }
 
+  beforeGoLive() {
+    return Promise.resolve();
+  }
+
 }

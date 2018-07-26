@@ -188,4 +188,8 @@ export class MixerService extends StatefulService<IMixerServiceState> implements
         });
     });
   }
+
+  beforeGoLive() {
+    return Promise.resolve();
+  }
 }
