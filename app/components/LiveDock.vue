@@ -53,7 +53,7 @@
         <div class="live-dock-platform-tools">
           <a
             @click="showEditStreamInfo"
-            v-if="isTwitch || isMixer || (isYoutube && isStreaming)"
+            v-if="isTwitch || isMixer || (isYoutube && isStreaming) || isFacebook"
             v-tooltip="editStreamInfoTooltip">
             <i class="fa fa-pencil" />
           </a>
@@ -70,10 +70,10 @@
             <i class="fa fa-cogs" />
           </a>
         </div>
-        <a @click="refreshChat" v-if="isTwitch || isMixer || (isYoutube && isStreaming)">{{ $t('Refresh Chat') }}</a>
+        <a @click="refreshChat" v-if="isTwitch || isMixer || (isYoutube && isStreaming) || isFacebook">{{ $t('Refresh Chat') }}</a>
       </div>
 
-      <div class="live-dock-chat" v-if="isTwitch || isMixer || (isYoutube && isStreaming)">
+      <div class="live-dock-chat" v-if="isTwitch || isMixer || (isYoutube && isStreaming) || isFacebook">
         <chat ref="chat" />
       </div>
       <div class="flex flex--center flex--column live-dock-chat--offline" v-else >
@@ -204,7 +204,7 @@
 .live-dock-chat--offline {
   height: 100%;
 
-  img{ 
+  img{
     width: 75%;
   }
 }

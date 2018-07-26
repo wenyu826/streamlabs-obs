@@ -16,7 +16,7 @@
     </div>
     <div v-if="!infoLoading && !infoError">
       <TextInput v-model="streamTitleModel" />
-      <TextInput  v-if="isYoutube" v-model="streamDescriptionModel" />
+      <TextInput  v-if="isYoutube || isFacebook" v-model="streamDescriptionModel" />
       <ListInput
         v-if="isTwitch || isMixer"
         :value="gameModel"

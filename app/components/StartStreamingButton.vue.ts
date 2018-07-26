@@ -8,6 +8,7 @@ import { CustomizationService } from 'services/customization';
 import { MediaBackupService, EGlobalSyncStatus } from 'services/media-backup';
 import electron from 'electron';
 import { $t } from 'services/i18n';
+import { FacebookService } from 'services/platforms/facebook';
 
 @Component({})
 export default class StartStreamingButton extends Vue {
@@ -47,7 +48,9 @@ export default class StartStreamingButton extends Vue {
         this.userService.isLoggedIn() &&
         this.customizationService.state.updateStreamInfoOnLive &&
         (this.userService.platform.type === 'twitch' ||
-        this.userService.platform.type === 'mixer')
+        this.userService.platform.type === 'mixer' ||
+        this.userService.platform.type === 'facebook'
+        )
       ) {
         this.streamingService.showEditStreamInfo();
       } else {
