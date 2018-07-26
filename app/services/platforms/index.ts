@@ -1,7 +1,7 @@
 import { TwitchService } from './twitch';
 import { YoutubeService } from './youtube';
 import { MixerService } from './mixer';
-import { integer } from 'aws-sdk/clients/lightsail';
+import { FacebookService } from './facebook';
 
 export interface IChannelInfo {
   title: string;
@@ -35,6 +35,8 @@ export interface IPlatformService {
   searchGames: (searchString: string) => Promise<IGame[]>;
 
   getChatUrl: (mode: string) => Promise<string>;
+
+  beforeGoLive: () => Promise<any>;
 }
 
 export interface IPlatformAuth {
@@ -49,12 +51,13 @@ export interface IPlatformAuth {
   };
 }
 
-export type TPlatform = 'twitch' | 'youtube' | 'mixer';
+export type TPlatform = 'twitch' | 'youtube' | 'mixer' | 'facebook';
 
 export function getPlatformService(platform: TPlatform): IPlatformService {
   return {
     twitch: TwitchService.instance,
     youtube: YoutubeService.instance,
-    mixer: MixerService.instance
+    mixer: MixerService.instance,
+    facebook: FacebookService.instance
   }[platform];
 }
