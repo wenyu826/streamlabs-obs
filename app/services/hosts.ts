@@ -7,7 +7,10 @@ import Util from 'services/utils';
 export class HostsService extends Service {
 
   get streamlabs() {
-    return 'streamlabs.com';
+    if (Util.useLocalHost()) {
+      return 'streamlabs.site';
+    }
+    return 'beta2.streamlabs.com';
   }
 
   get overlays() {
@@ -30,7 +33,13 @@ export class HostsService extends Service {
   }
 
   get facemaskCDN() {
-    return 'facemasks-cdn.streamlabs.com/';
+    return 'facemasks-cdn.streamlabs.com';
   }
 
+  get io() {
+    if (Util.useLocalHost()) {
+      return 'io.streamlabs.site:4567';
+    }
+    return 'aws-io.streamlabs.com';
+  }
 }

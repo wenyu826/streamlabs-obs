@@ -633,6 +633,6 @@ export class FacemasksService extends PersistentStatefulService<IFacemasksServic
   }
 
   private libraryUrl(uuid: string) {
-    return `${this.cdn}${uuid}.json`;
+    return `${this.cdn}/${uuid}.json`;
   }
 }

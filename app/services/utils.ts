@@ -41,6 +41,10 @@ export default class Utils {
     return electron.remote.process.env.SLOBS_PREVIEW;
   }
 
+  static useLocalHost(): boolean {
+    return electron.remote.process.env.USE_LOCAL_HOST;
+  }
+
   static isIpc(): boolean {
     return electron.remote.process.env.SLOBS_IPC;
   }
