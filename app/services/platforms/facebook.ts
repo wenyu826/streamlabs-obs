@@ -283,7 +283,7 @@ export class FacebookService extends StatefulService<IFacebookServiceState> impl
 
   getChatUrl(mode: string): Promise<string> {
     return new Promise((resolve) => {
-      resolve(`https://www.facebook.com/${this.state.activePage.id}/videos/${this.state.liveVideoId}`);
+      resolve('https://www.facebook.com/gaming/streamer/chat/');
     });
   }
 
