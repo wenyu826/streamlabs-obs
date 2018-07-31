@@ -201,13 +201,16 @@ export class FacebookService extends StatefulService<IFacebookServiceState> impl
     const data = {
       title: this.state.streamProperties.title,
       description: this.state.streamProperties.description,
-      game_spec: 'league of legends',
+      game_specs: {
+        name: 'League of Legends'
+      }
     };
     const request = new Request(url, { method: 'POST', headers, body: JSON.stringify(data) });
     return fetch(request)
       .then(handleErrors)
       .then(response => response.json())
       .then(json => {
+        console.log(json, 'FUUUUUU');
         const streamKey = json.stream_url.substr(json.stream_url.lastIndexOf('/') + 1);
         this.SET_LIVE_VIDEO_ID(json.id);
 
