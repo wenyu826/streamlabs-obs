@@ -262,5 +262,16 @@ export class ScenesService extends StatefulService<IScenesState> implements ISce
       }
     });
   }
+
+  showEditTransform(sceneItemId: string) {
+    this.windowsService.showWindow({
+      componentName: 'EditTransform',
+      queryParams: { sceneItemId },
+      size: {
+        width: 500,
+        height: 500
+      }
+    });
+  }
 }
 

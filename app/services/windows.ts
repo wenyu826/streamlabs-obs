@@ -22,6 +22,7 @@ import ManageSceneCollections from 'components/windows/ManageSceneCollections.vu
 import RecentEvents from 'components/windows/RecentEvents.vue';
 import Projector from 'components/windows/Projector.vue';
 import MediaGallery from 'components/windows/MediaGallery.vue';
+import EditTransform from 'components/windows/EditTransform.vue';
 import { mutation, StatefulService } from 'services/stateful-service';
 import electron from 'electron';
 import Vue from 'vue';
@@ -100,6 +101,7 @@ export class WindowsService extends StatefulService<IWindowsState> {
     Projector,
     RecentEvents,
     MediaGallery,
+    EditTransform,
 
     BitGoal,
     DonationGoal,

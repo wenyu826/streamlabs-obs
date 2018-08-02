@@ -19,6 +19,16 @@ export class SourceTransformMenu extends Menu {
 
 
   appendMenuItems() {
+    // TODO: Make sure only a single item is selected
+    this.append({
+      label: $t('Edit Transform'),
+      click: () => {
+        this.scenesService.showEditTransform(
+          this.selectionService.getItems()[0].id
+        );
+      }
+    })
+
     this.append({
       label: $t('Reset Transform'),
       click: () => {
